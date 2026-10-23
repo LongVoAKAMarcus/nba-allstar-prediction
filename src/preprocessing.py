@@ -237,3 +237,149 @@ def build_preprocessing_pipeline(
         remainder=remainder,
     )
     return preprocessor
+
+
+def clean_raw_nba_data(
+    raw_csv_path: Union[str, Path],
+    output_clean_path: Optional[Union[str, Path]] = None,
+    min_season: int = 1980,
+    exclude_lockout_seasons: Optional[List[int]] = None,
+    min_games: int = 15,
+    min_mp_per_game: float = 10.0
+) -> pd.DataFrame:
+    """
+    End-to-end cleaning and feature engineering pipeline for raw NBA player/team dataset (e.g., 1.csv):
+    1. Extracts team winning percentage ('team_win_pct') from team records.
+    2. Filters modern NBA seasons (default >= 1980) and excludes lockout seasons without All-Star game (1999).
+    3. Builds binary 'All_Star' ground truth label from 'replaced' and 'IS_ALLSTAR'.
+    4. Deduplicates traded players: identifies primary team ('main_tm') and retains aggregate row ('TOT', '2TM', '3TM', '4TM', '5TM').
+    5. Merges 'team_win_pct' corresponding to player's primary team.
+    6. Computes historical All-Star appearances ('prev_allstar_count') prior to current season.
+    7. Filters out low-minute/low-game noise (g >= min_games, mp_per_game >= min_mp_per_game).
+    8. Handles missing percentage stats (0.0 fill) and casts discrete columns.
+    9. Computes within-season Z-scores for: ['pts_per_game', 'ast_per_game', 'trb_per_game', 'per', 'ws', 'vorp'].
+    10. Optionally exports clean dataframe to output_clean_path.
+
+    Parameters
+    ----------
+    raw_csv_path : str or Path
+        Path to raw CSV file (e.g. 1.csv).
+    output_clean_path : str or Path, optional
+        Path where cleaned CSV (nba_clean.csv) will be saved.
+    min_season : int, default=1980
+        Minimum season year.
+    exclude_lockout_seasons : list of int, optional
+        Seasons to exclude (defaults to [1999] due to lockout cancellation of All-Star game).
+    min_games : int, default=15
+        Minimum games played threshold.
+    min_mp_per_game : float, default=10.0
+        Minimum minutes per game threshold.
+
+    Returns
+    -------
+    pd.DataFrame
+        Cleaned dataframe with 34 standardized columns.
+    """
+    if exclude_lockout_seasons is None:
+        exclude_lockout_seasons = [1999]
+
+    from pathlib import Path
+    raw_path = Path(raw_csv_path)
+    if not raw_path.exists():
+        raise FileNotFoundError(f"Raw data file not found: {raw_path}")
+
+    df_raw = pd.read_csv(raw_path, low_memory=False)
+
+    # 1. Tách bảng tỷ lệ thắng của đội bóng (Team Win%)
+    team_rows = df_raw[
+        df_raw['player_id'].isnull() & 
+        df_raw['abbreviation'].notnull() & 
+        df_raw['w'].notnull() & 
+        (df_raw['lg'] == 'NBA') & 
+        (df_raw['season'] >= min_season)
+    ].copy()
+    team_rows['team_win_pct'] = team_rows['w'] / (team_rows['w'] + team_rows['l'])
+    team_win_lookup = team_rows[['season', 'abbreviation', 'team_win_pct']].drop_duplicates(subset=['season', 'abbreviation'])
+
+    # 2. Lọc cầu thủ NBA từ mùa min_season (bỏ mùa lockout)
+    players = df_raw[
+        df_raw['player_id'].notnull() & 
+        df_raw['pts_per_game'].notnull() & 
+        (df_raw['lg'] == 'NBA') & 
+        (df_raw['season'] >= min_season) &
+        (~df_raw['season'].isin(exclude_lockout_seasons))
+    ].copy()
+
+    # 3. Tạo nhãn All_Star và khử trùng cầu thủ đổi đội (2TM, 3TM, 4TM, 5TM, TOT)
+    players['All_Star'] = np.where((players['replaced'].notnull()) | (players['IS_ALLSTAR'] == 1.0), 1, 0)
+    players['All_Star'] = players.groupby(['player_id', 'season'])['All_Star'].transform('max')
+
+    multi_tm_codes = ['TOT', '2TM', '3TM', '4TM', '5TM']
+    real_team_rows = players[~players['team'].isin(multi_tm_codes)].copy()
+    main_team = (
+        real_team_rows.sort_values('g', ascending=False)
+        .drop_duplicates(subset=['player_id', 'season'], keep='first')[['player_id', 'season', 'team']]
+        .rename(columns={'team': 'main_tm'})
+    )
+
+    players['is_total_row'] = np.where(players['team'].isin(multi_tm_codes), 0, 1)
+    players = (
+        players.sort_values(['player_id', 'season', 'is_total_row', 'g'], ascending=[True, True, True, False])
+        .drop_duplicates(subset=['player_id', 'season'], keep='first')
+        .copy()
+    )
+
+    # 4. Ghép tỷ lệ thắng của đội (team_win_pct)
+    players = pd.merge(players, main_team, on=['player_id', 'season'], how='left')
+    players['main_tm'] = players['main_tm'].fillna(players['team'])
+    players = pd.merge(players, team_win_lookup, left_on=['season', 'main_tm'], right_on=['season', 'abbreviation'], how='left')
+
+    # 5. Tính số lần All-Star quá khứ (prev_allstar_count) trước khi lọc nhiễu
+    players['season'] = players['season'].astype(int)
+    players = players.sort_values(['player_id', 'season']).reset_index(drop=True)
+    players['prev_allstar_count'] = (
+        players.groupby('player_id')['All_Star']
+        .transform(lambda x: x.cumsum().shift(1).fillna(0))
+        .astype(int)
+    )
+
+    # 6. Lọc nhiễu (g >= min_games, mp_per_game >= min_mp_per_game) & xử lý giá trị thiếu
+    players_clean = players[(players['g'] >= min_games) & (players['mp_per_game'] >= min_mp_per_game)].copy()
+    for pct_col in ['fg_percent', 'x3p_percent', 'ft_percent', 'ts_percent']:
+        if pct_col in players_clean.columns:
+            players_clean[pct_col] = players_clean[pct_col].fillna(0.0)
+    if 'gs' in players_clean.columns:
+        players_clean['gs'] = players_clean['gs'].fillna(0).astype(int)
+    if 'g' in players_clean.columns:
+        players_clean['g'] = players_clean['g'].astype(int)
+    if 'age' in players_clean.columns:
+        players_clean['age'] = players_clean['age'].astype(int)
+
+    # 7. Chuẩn hóa Z-score theo từng mùa giải
+    zscore_features = ['pts_per_game', 'ast_per_game', 'trb_per_game', 'per', 'ws', 'vorp']
+    for col in zscore_features:
+        if col in players_clean.columns:
+            mean = players_clean.groupby('season')[col].transform('mean')
+            std = players_clean.groupby('season')[col].transform('std').replace(0, 1)
+            players_clean[f'{col}_zscore'] = ((players_clean[col] - mean) / std).fillna(0.0)
+
+    final_cols = [
+        'player_id', 'player', 'season', 'pos', 'age', 'team', 'main_tm',
+        'g', 'gs', 'mp_per_game', 'pts_per_game', 'ast_per_game', 'trb_per_game',
+        'stl_per_game', 'blk_per_game', 'tov_per_game',
+        'fg_percent', 'x3p_percent', 'ft_percent',
+        'per', 'ts_percent', 'usg_percent', 'ws', 'bpm', 'vorp',
+        'team_win_pct', 'prev_allstar_count',
+        'pts_per_game_zscore', 'ast_per_game_zscore', 'trb_per_game_zscore',
+        'per_zscore', 'ws_zscore', 'vorp_zscore',
+        'All_Star'
+    ]
+    available_final_cols = [c for c in final_cols if c in players_clean.columns]
+    nba_clean = players_clean[available_final_cols].copy().reset_index(drop=True)
+
+    if output_clean_path is not None:
+        out_p = Path(output_clean_path)
+        out_p.parent.mkdir(parents=True, exist_ok=True)
+        nba_clean.to_csv(out_p, index=False)
+
+    return nba_clean

@@ -159,7 +159,7 @@ def export_predictions(
     if feature_cols is not None:
         X_features = X_df[feature_cols]
     else:
-        exclude_cols = {player_col, season_col, "y_true", "is_all_star", "all_star", "target"}
+        exclude_cols = {player_col, season_col, "y_true", "is_all_star", "all_star", "All_Star", "target"}
         candidate_cols = [c for c in X_df.columns if c not in exclude_cols]
         # Keep numeric only if raw dataframe passed
         X_features = X_df[candidate_cols].select_dtypes(include=[np.number])
