@@ -43,16 +43,20 @@ venv.bak/
 *.sublime-project
 *.sublime-workspace
 
-# Large datasets & models (keep directory structure via .gitkeep)
+# Large raw datasets & models (keep directory structure via .gitkeep)
 data/raw/*
 !data/raw/.gitkeep
-data/processed/*
-!data/processed/.gitkeep
 models/*
 !models/.gitkeep
 
+# Allow processed data and prediction reports for team collaboration
+!data/processed/*.csv
+!reports/predictions.csv
+
 # Output CSVs / temporary dumps
 *.csv
+!data/processed/*.csv
+!reports/predictions.csv
 !sample_data/*.csv
 reports/*.pdf
 reports/*.html
