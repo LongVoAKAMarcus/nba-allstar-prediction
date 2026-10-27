@@ -256,3 +256,47 @@ def load_models(model_names: List[str], input_dir: Union[str, Path]) -> Dict[str
             raise FileNotFoundError(f"Model file not found: {filepath}")
         loaded[name] = joblib.load(filepath)
     return loaded
+
+
+if __name__ == "__main__":
+    base_dir = Path(__file__).resolve().parent.parent
+    train_file = base_dir / "data" / "processed" / "train.csv"
+    val_file = base_dir / "data" / "processed" / "val.csv"
+    test_file = base_dir / "data" / "processed" / "test.csv"
+
+    if not train_file.exists():
+        print(f"Train data not found at {train_file}. Please run preprocessing first.")
+        sys.exit(1)
+
+    print("Loading processed data...")
+    train_df = pd.read_csv(train_file)
+    val_df = pd.read_csv(val_file)
+    test_df = pd.read_csv(test_file)
+
+    feature_cols = [
+        'pts_per_game_zscore', 'ast_per_game_zscore', 'trb_per_game_zscore',
+        'per_zscore', 'ws_zscore', 'vorp_zscore',
+        'team_win_pct', 'prev_allstar_count',
+        'mp_per_game', 'pts_per_game', 'ast_per_game', 'trb_per_game',
+        'stl_per_game', 'blk_per_game', 'tov_per_game',
+        'fg_percent', 'x3p_percent', 'ft_percent',
+        'per', 'ts_percent', 'usg_percent', 'ws', 'bpm', 'vorp'
+    ]
+    feature_cols = [c for c in feature_cols if c in train_df.columns]
+    target_col = "All_Star" if "All_Star" in train_df.columns else "is_all_star"
+
+    print("Initializing and training 4 models...")
+    models = get_default_models(random_state=42)
+    fitted = train_models(models, train_df[feature_cols], train_df[target_col])
+
+    print("Saving models to models/...")
+    save_models(fitted, base_dir / "models")
+
+    print("Generating and exporting predictions...")
+    val_p = export_predictions(fitted, val_df, val_df[target_col], split_name="val", feature_cols=feature_cols)
+    test_p = export_predictions(fitted, test_df, test_df[target_col], split_name="test", feature_cols=feature_cols)
+
+    all_preds = pd.concat([val_p, test_p], ignore_index=True)
+    out_preds = base_dir / "reports" / "predictions.csv"
+    all_preds.to_csv(out_preds, index=False)
+    print(f"Successfully saved {len(all_preds)} predictions to {out_preds}")

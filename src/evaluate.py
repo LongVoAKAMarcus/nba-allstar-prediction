@@ -281,3 +281,34 @@ def evaluate_all_models(
 
     summary_df = pd.DataFrame(rows)
     return summary_df.sort_values(by="mean_topk_acc", ascending=False).reset_index(drop=True)
+
+
+if __name__ == "__main__":
+    base_dir = Path(__file__).resolve().parent.parent
+    preds_file = base_dir / "reports" / "predictions.csv"
+
+    if not preds_file.exists():
+        print(f"Predictions file not found at {preds_file}. Please run training first.")
+        import sys
+        sys.exit(1)
+
+    print(f"Loading predictions from: {preds_file}")
+    df_preds = load_predictions(preds_file)
+
+    print("\n" + "=" * 50)
+    print("VALIDATION SET BENCHMARK (2017-2019)")
+    print("=" * 50)
+    val_summary = evaluate_all_models(df_preds, split="val")
+    print(val_summary.to_string(index=False))
+
+    print("\n" + "=" * 50)
+    print("TEST SET BENCHMARK (2020-2026)")
+    print("=" * 50)
+    test_summary = evaluate_all_models(df_preds, split="test")
+    print(test_summary.to_string(index=False))
+
+    print("\n" + "=" * 50)
+    print("TOP-K ACCURACY PER SEASON (VALIDATION)")
+    print("=" * 50)
+    topk_val = compute_topk_accuracy_per_season(df_preds[df_preds["split"] == "val"])
+    print(topk_val.to_string(index=False))
