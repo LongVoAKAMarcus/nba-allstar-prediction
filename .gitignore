@@ -60,6 +60,8 @@ models/*
 !sample_data/*.csv
 reports/*.pdf
 reports/*.html
+reports/*.docx
+*.docx
 
 # Operating System files
 .DS_Store

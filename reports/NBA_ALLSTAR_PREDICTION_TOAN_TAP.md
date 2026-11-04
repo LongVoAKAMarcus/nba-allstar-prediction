@@ -9,7 +9,7 @@
 2. [Cơ chế chọn cầu thủ: Ngưỡng xác suất (Threshold) vs. Xếp hạng Top-K](#2-cơ-chế-chọn-cầu-thủ-ngưỡng-xác-suất-threshold-vs-xếp-hạng-top-k)
 3. [Quy trình tiền xử lý dữ liệu thực tế (`1.csv` $\rightarrow$ `nba_clean.csv`)](#3-quy-trình-tiền-xử-lý-dữ-liệu-thực-tế)
 4. [Không gian đặc trưng (Feature Space - 24 Features)](#4-không-gian-đặc-trưng-feature-space)
-5. [Thiết kế & Huấn luyện 4 Mô hình Học máy](#5-thiết-kế--huấn-luyện-4-mô-hình-học-máy)
+5. [Thiết kế & Huấn luyện Mô hình 1 và Mô hình 2](#5-thiết-kế--huấn-luyện-mô-hình-1-và-mô-hình-2)
 6. [Phương pháp Đánh giá Hiệu năng Toàn diện](#6-phương-pháp-đánh-giá-hiệu-năng-toàn-diện)
 7. [Phân tích chuyên sâu Kết quả các mùa 2024, 2025, 2026 & Error Analysis](#7-phân-tích-chuyên-sâu-kết-quả-các-mùa-2024-2025-2026)
 8. [Hướng dẫn vận hành & Kiểm tra thực tế](#8-hướng-dẫn-vận-hành--kiểm-tra-thực-tế)
@@ -139,7 +139,7 @@ Dữ liệu đưa vào mô hình học máy gồm **24 đặc trưng số liệu
 
 ---
 
-## 5. THIẾT KẾ & HUẤN LUYỆN 4 MÔ HÌNH HỌC MÁY
+## 5. THIẾT KẾ & HUẤN LUYỆN MÔ HÌNH 1 VÀ MÔ HÌNH 2
 
 ### 5.1. Phân chia tập dữ liệu theo thứ tự thời gian (Temporal Split)
 Để chống hiện tượng **rò rỉ dữ liệu (Data Leakage)**, không dùng `train_test_split` ngẫu nhiên mà chia chặt chẽ theo mốc mùa giải:
@@ -147,17 +147,15 @@ Dữ liệu đưa vào mô hình học máy gồm **24 đặc trưng số liệu
 - **Tập Validation ($2017 - 2019$):** $1.187$ dòng ($80$ All-Stars, tỷ lệ $6.74\%$) — Dùng để tinh chỉnh siêu tham số và chọn mô hình tối ưu.
 - **Tập Test ($\ge 2020 - 2026$):** $2.882$ dòng ($186$ All-Stars, tỷ lệ $6.45\%$) — Dùng để kiểm thử mù độc lập hiệu năng dự báo tương lai.
 
-### 5.2. Khung 4 mô hình triển khai (`src/train.py`)
-1. **`DummyClassifier(strategy='prior')`:** 
+### 5.2. Khung các mô hình triển khai (`src/train.py`)
+1. **`DummyClassifier(strategy='prior')` (Baseline):** 
    - Mô hình đối chứng ngẫu nhiên theo phân phối tiên nghiệm của nhãn. Dùng làm thang chuẩn đáy (Baseline floor) để chứng minh các mô hình máy học thực sự có học được quy luật.
-2. **`LogisticRegression(class_weight='balanced', max_iter=1000, random_state=42)`:**
-   - Mô hình tuyến tính cổ điển, sử dụng hàm Sigmoid:
+2. **`LogisticRegression(class_weight='balanced', max_iter=1000, random_state=42)` (Mô hình 1):**
+   - Mô hình phân loại tuyến tính với điều chuẩn $L_2$ (Ridge) và thuật toán tối ưu Quasi-Newton (L-BFGS):
      $$P(y=1|\mathbf{x}) = \frac{1}{1 + e^{-(\mathbf{w}^T\mathbf{x} + b)}}$$
-   - Tham số `class_weight='balanced'` tự động nhân trọng số phạt cao gấp ~12 lần cho lớp All-Star để chống việc mô hình luôn đoán là 0.
-3. **`RandomForestClassifier(class_weight='balanced', random_state=42)`:**
-   - Tập hợp 100 cây quyết định (Bagging Ensemble). Có khả năng bắt được các mối quan hệ phi tuyến phức tạp (ví dụ: một cầu thủ ghi ít điểm nhưng nếu VORP cực cao và đội thắng nhiều thì vẫn có xác suất cao).
-4. **`HistGradientBoostingClassifier(random_state=42)`:**
-   - Thuật toán Gradient Boosting dựa trên Histogram (tương tự LightGBM), chia các đặc trưng liên tục thành 256 bins nguyên số. Tốc độ huấn luyện cực nhanh, xử lý tốt ngoại lai và có khả năng nội suy xác suất mượt mà nhất.
+   - Tham số `class_weight='balanced'` tự động nhân trọng số phạt cao gấp ~10.4 lần cho lớp All-Star để chống việc mô hình luôn đoán là 0 (triệt tiêu Accuracy Paradox).
+3. **`RandomForestClassifier(class_weight='balanced', random_state=42)` (Mô hình 2):**
+   - Tập hợp cây quyết định kết hợp Bagging Ensemble và chọn ngẫu nhiên $m = \sqrt{p}$ thuộc tính tại mỗi node. Có khả năng bắt được các mối quan hệ phi tuyến phức tạp (ví dụ: một cầu thủ ghi ít điểm nhưng nếu VORP cực cao và đội thắng nhiều thì vẫn có xác suất cao).
 
 ---
 
@@ -168,18 +166,16 @@ Dữ liệu đưa vào mô hình học máy gồm **24 đặc trưng số liệu
 
 | Mô hình | Precision | Recall | F1-Score | PR-AUC | ROC-AUC | Mean Top-$k$ Accuracy |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **HistGradientBoosting** | $75.32\%$ | $72.50\%$ | $0.739$ | **$0.864$** | **$0.986$** | **$76.07\%$** |
-| **RandomForest** | **$81.54\%$** | $66.25\%$ | $0.731$ | $0.841$ | $0.985$ | **$76.17\%$** |
-| **LogisticRegression** | $57.46\%$ | **$96.25\%$** | $0.719$ | $0.863$ | $0.986$ | **$74.93\%$** |
+| **RandomForest (Mô hình 2)** | **$81.54\%$** | $66.25\%$ | **$0.731$** | $0.841$ | $0.985$ | **$76.17\%$** |
+| **LogisticRegression (Mô hình 1)** | $57.46\%$ | **$96.25\%$** | $0.720$ | **$0.865$** | **$0.986$** | **$74.93\%$** |
 | **Dummy (Baseline)** | $0.00\%$ | $0.00\%$ | $0.000$ | $0.067$ | $0.500$ | $11.13\%$ |
 
 ### 6.2. Bảng xếp hạng Benchmark trên Tập Test độc lập ($2020 - 2026$)
 
 | Mô hình | Precision | Recall | F1-Score | PR-AUC | ROC-AUC | Mean Top-$k$ Accuracy |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **HistGradientBoosting** | $73.40\%$ | $80.11\%$ | **$0.766$** | **$0.853$** | **$0.987$** | **$76.81\%$** |
-| **LogisticRegression** | $47.89\%$ | **$97.85\%$** | $0.643$ | $0.871$ | $0.990$ | **$79.55\%$** |
-| **RandomForest** | **$78.43\%$** | $64.52\%$ | $0.708$ | $0.825$ | $0.984$ | **$74.67\%$** |
+| **LogisticRegression (Mô hình 1)** | $48.66\%$ | **$97.85\%$** | $0.650$ | **$0.871$** | **$0.990$** | **$79.55\%$** |
+| **RandomForest (Mô hình 2)** | **$78.43\%$** | $64.52\%$ | **$0.708$** | $0.825$ | $0.984$ | **$74.67\%$** |
 | **Dummy (Baseline)** | $0.00\%$ | $0.00\%$ | $0.000$ | $0.065$ | $0.500$ | $7.07\%$ |
 
 ---
@@ -235,7 +231,7 @@ Mở Python và gõ:
 import pandas as pd
 df = pd.read_csv('reports/predictions.csv')
 
-# Xem top 10 cầu thủ có xác suất cao nhất mùa 2026 theo mô hình HistGradientBoosting:
-season_2026 = df[(df['season'] == 2026) & (df['model'] == 'HistGradientBoosting')]
+# Xem top 10 cầu thủ có xác suất cao nhất mùa 2026 theo Mô hình 2 (RandomForest):
+season_2026 = df[(df['season'] == 2026) & (df['model'] == 'RandomForest')]
 print(season_2026.sort_values(by='y_proba', ascending=False)[['player', 'y_proba', 'y_true']].head(10))
 ```

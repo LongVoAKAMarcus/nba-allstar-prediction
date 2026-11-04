@@ -13,7 +13,7 @@ nba-allstar-prediction/
 │   └── processed/            # Dữ liệu đã làm sạch & phân chia (train.csv, val.csv, test.csv)
 ├── notebooks/
 │   ├── 01_data_cleaning.ipynb    # Tiền xử lý, khử khác biệt thời kỳ & pipeline
-│   ├── 02_model_training.ipynb   # Huấn luyện 4 mô hình & xuất predictions.csv
+│   ├── 02_model_training.ipynb   # Huấn luyện Mô hình 1 & 2 và xuất predictions.csv
 │   └── 03_evaluation.ipynb       # Đánh giá metrics, Top-K per season & Error analysis
 ├── src/
 │   ├── __init__.py
@@ -64,11 +64,10 @@ Các thư viện chính bao gồm:
 - `build_preprocessing_pipeline(numeric_features)`: Xây dựng scikit-learn `Pipeline` / `ColumnTransformer` kết hợp `SimpleImputer(strategy='median')` và `StandardScaler()` (chỉ `fit` trên tập Train).
 
 ### 3.2. `src/train.py`
-- Khởi tạo 4 mô hình phân loại:
+- Khởi tạo các mô hình phân loại trọng tâm:
   1. `DummyClassifier(strategy='prior')`: Mô hình baseline cơ sở.
-  2. `LogisticRegression(class_weight='balanced', max_iter=1000, random_state=42)`: Mô hình tuyến tính dễ diễn giải, cân bằng nhãn thiểu số.
-  3. `RandomForestClassifier(class_weight='balanced', random_state=42)`: Mô hình cây quyết định kết hợp ensemble bagging.
-  4. `HistGradientBoostingClassifier(random_state=42)`: Mô hình gradient boosting hiệu năng cao.
+  2. `LogisticRegression(class_weight='balanced', max_iter=1000, random_state=42)`: **Mô hình 1** - Phân loại tuyến tính với điều chuẩn L2, tối ưu Quasi-Newton (L-BFGS) và cân bằng trọng số nhãn thiểu số.
+  3. `RandomForestClassifier(class_weight='balanced', random_state=42)`: **Mô hình 2** - Rừng ngẫu nhiên phi tuyến kết hợp Bagging và Feature Subspace.
 - `train_models(models_dict, X_train, y_train)`: Huấn luyện đồng thời các mô hình trên tập Train.
 - `export_predictions(models_dict, X_df, y_true, split_name, output_path)`: Xuất file dự đoán chuẩn hóa gồm đúng 6 cột:
   ```text
@@ -91,5 +90,5 @@ Các thư viện chính bao gồm:
 | Notebook | Thành viên phụ trách | Nhiệm vụ chính |
 | :--- | :--- | :--- |
 | **`01_data_cleaning.ipynb`** | **Thành viên 1** (Data Engineering) | Tải dữ liệu, lọc mùa giải hiện đại, khử trùng lặp cầu thủ chuyển nhượng, chuẩn hóa Z-score theo mùa, chia tập dữ liệu và xây dựng tiền xử lý pipeline. |
-| **`02_model_training.ipynb`** | **Thành viên 2** (Model Development) | Khởi tạo 4 mô hình phân loại, huấn luyện trên tập Train, dự đoán xác suất và xuất `reports/predictions.csv`, lưu trữ artifacts vào `models/`. |
+| **`02_model_training.ipynb`** | **Thành viên 2** (Model Development) | Khởi tạo Mô hình 1 (Logistic Regression) và Mô hình 2 (Random Forest), huấn luyện trên tập Train, dự đoán xác suất và xuất `reports/predictions.csv`, lưu trữ artifacts vào `models/`. |
 | **`03_evaluation.ipynb`** | **Thành viên 3** (Performance Analysis) | Nạp `predictions.csv`, tính metrics phân loại, đánh giá độ chính xác Top-K theo từng mùa giải, phân tích trường hợp lỗi (FP/FN), và trực quan hóa biểu đồ. |

@@ -11,17 +11,16 @@ import joblib
 import numpy as np
 import pandas as pd
 from sklearn.dummy import DummyClassifier
-from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 
 
 def get_default_models(random_state: int = 42) -> Dict[str, Any]:
     """
-    Instantiate the 4 designated classification models for NBA All-Star prediction:
+    Instantiate the classification models for NBA All-Star prediction:
     1. DummyClassifier (baseline)
-    2. LogisticRegression (interpretable linear baseline with class balancing)
-    3. RandomForestClassifier (tree ensemble with class balancing)
-    4. HistGradientBoostingClassifier (fast gradient boosting)
+    2. LogisticRegression (Model 1: linear classifier with L2 regularization and balanced weights)
+    3. RandomForestClassifier (Model 2: non-linear tree ensemble with bagging and balanced weights)
 
     Parameters
     ----------
@@ -42,9 +41,6 @@ def get_default_models(random_state: int = 42) -> Dict[str, Any]:
         ),
         "RandomForest": RandomForestClassifier(
             class_weight="balanced",
-            random_state=random_state,
-        ),
-        "HistGradientBoosting": HistGradientBoostingClassifier(
             random_state=random_state,
         ),
     }
@@ -285,7 +281,7 @@ if __name__ == "__main__":
     feature_cols = [c for c in feature_cols if c in train_df.columns]
     target_col = "All_Star" if "All_Star" in train_df.columns else "is_all_star"
 
-    print("Initializing and training 4 models...")
+    print("Initializing and training models (Dummy, LogisticRegression, RandomForest)...")
     models = get_default_models(random_state=42)
     fitted = train_models(models, train_df[feature_cols], train_df[target_col])
 
