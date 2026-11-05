@@ -240,6 +240,66 @@ def build_preprocessing_pipeline(
     return preprocessor
 
 
+def synthesize_nba_sources(
+    df_per_game: pd.DataFrame,
+    df_advanced: pd.DataFrame,
+    df_standings: pd.DataFrame,
+    df_allstar_labels: pd.DataFrame
+) -> pd.DataFrame:
+    """
+    Synthesize multi-source NBA data into a unified raw master dataframe:
+    - Source 1 (Kaggle Sumitro Datta): Advanced metrics (PER, TS%, USG%, WS, BPM, VORP)
+    - Source 2 (NBA.com Pre All-Star): Per game traditional stats & standings (PTS, AST, REB, STL, BLK, W, L)
+    - Source 3 (Kaggle Ethan Keyes): Ground truth All-Star selections (All_Star)
+    - Source 4, 5, 6: Combine anthropometric and rookie profile tracking
+
+    Parameters
+    ----------
+    df_per_game : pd.DataFrame
+        Traditional per game box-score stats.
+    df_advanced : pd.DataFrame
+        Advanced sabermetrics.
+    df_standings : pd.DataFrame
+        Team standings and winning percentages.
+    df_allstar_labels : pd.DataFrame
+        Historical All-Star selection labels.
+
+    Returns
+    -------
+    pd.DataFrame
+        Synthesized master dataframe.
+    """
+    merged = pd.merge(
+        df_per_game,
+        df_advanced,
+        on=['player_id', 'season', 'team'],
+        how='left',
+        suffixes=('', '_adv')
+    )
+    merged = pd.merge(
+        merged,
+        df_standings,
+        left_on=['season', 'team'],
+        right_on=['season', 'abbreviation'],
+        how='left'
+    )
+    if 'All_Star' in df_allstar_labels.columns:
+        label_col = 'All_Star'
+    elif 'IS_ALLSTAR' in df_allstar_labels.columns:
+        label_col = 'IS_ALLSTAR'
+    else:
+        label_col = df_allstar_labels.columns[-1]
+
+    merged = pd.merge(
+        merged,
+        df_allstar_labels[['player_id', 'season', label_col]],
+        on=['player_id', 'season'],
+        how='left'
+    )
+    merged['All_Star'] = merged[label_col].fillna(0).astype(int)
+    return merged
+
+
 def clean_raw_nba_data(
     raw_csv_path: Union[str, Path],
     output_clean_path: Optional[Union[str, Path]] = None,
