@@ -240,6 +240,72 @@ def build_preprocessing_pipeline(
     return preprocessor
 
 
+def synthesize_sources_to_raw(
+    sources_dir: Union[str, Path] = "data/raw/sources",
+    output_path: Optional[Union[str, Path]] = "data/raw/1.csv"
+) -> pd.DataFrame:
+    """
+    Synthesize the independent raw source datasets into a unified master raw DataFrame (1.csv).
+    
+    Constituent sources:
+    1. source_kaggle_per_game.csv: Traditional player boxscore stats (PTS, AST, REB, STL, BLK, G, MP)
+    2. source_kaggle_advanced.csv: Advanced sabermetrics (PER, TS%, USG%, WS, BPM, VORP)
+    3. source_allstar_selections.csv: Ground-truth All-Star selection flags (IS_ALLSTAR, replaced)
+    4. source_team_standings.csv: Historical team records and winning percentages (W, L)
+    5. source_nba_pre_allstar.csv: Official NBA.com stats up to the All-Star break
+
+    Parameters
+    ----------
+    sources_dir : str or Path, default='data/raw/sources'
+        Directory containing the constituent raw source CSV files.
+    output_path : str or Path, optional, default='data/raw/1.csv'
+        Destination file path to save the synthesized master raw CSV.
+        If None, the file is not written to disk.
+
+    Returns
+    -------
+    pd.DataFrame
+        Unified raw master dataframe.
+    """
+    s_dir = Path(sources_dir)
+    if not s_dir.exists():
+        raise FileNotFoundError(f"Sources directory not found: {s_dir}")
+
+    # Load constituent source datasets
+    pg_path = s_dir / "source_kaggle_per_game.csv"
+    adv_path = s_dir / "source_kaggle_advanced.csv"
+    star_path = s_dir / "source_allstar_selections.csv"
+    team_path = s_dir / "source_team_standings.csv"
+    pre_path = s_dir / "source_nba_pre_allstar.csv"
+
+    for required_file in [pg_path, adv_path, star_path, team_path, pre_path]:
+        if not required_file.exists():
+            raise FileNotFoundError(f"Required source file not found: {required_file}")
+
+    df_pg = pd.read_csv(pg_path, low_memory=False)
+    df_adv = pd.read_csv(adv_path, low_memory=False)
+    df_star = pd.read_csv(star_path, low_memory=False)
+    df_team = pd.read_csv(team_path, low_memory=False)
+    df_pre = pd.read_csv(pre_path, low_memory=False)
+
+    # 1. Merge player traditional stats with advanced sabermetrics on player_id, season, team
+    merged_players = pd.merge(df_pg, df_adv, on=['player_id', 'season', 'team'], how='left')
+
+    # 2. Merge ground-truth All-Star selection flags
+    merged_players = pd.merge(merged_players, df_star, on=['player_id', 'season', 'team'], how='left')
+
+    # 3. Combine player records with team standings and official NBA pre-allstar tracking
+    df_master = pd.concat([merged_players, df_team, df_pre], ignore_index=True)
+
+    if output_path is not None:
+        out_p = Path(output_path)
+        out_p.parent.mkdir(parents=True, exist_ok=True)
+        df_master.to_csv(out_p, index=False)
+        print(f"[SUCCESS] Đã tổng hợp thành công 5 nguồn dữ liệu độc lập thành '{out_p}' ({df_master.shape[0]:,} dòng x {df_master.shape[1]} cột).")
+
+    return df_master
+
+
 def synthesize_nba_sources(
     df_per_game: pd.DataFrame,
     df_advanced: pd.DataFrame,
@@ -347,9 +413,14 @@ def clean_raw_nba_data(
     from pathlib import Path
     raw_path = Path(raw_csv_path)
     if not raw_path.exists():
-        raise FileNotFoundError(f"Raw data file not found: {raw_path}")
-
-    df_raw = pd.read_csv(raw_path, low_memory=False)
+        sources_dir = raw_path.parent / "sources"
+        if sources_dir.exists() and (sources_dir / "source_kaggle_per_game.csv").exists():
+            print(f"[INFO] '{raw_path.name}' chưa có sẵn. Đang tự động kích hoạt synthesize_sources_to_raw() từ '{sources_dir}' để tạo '{raw_path.name}'...")
+            df_raw = synthesize_sources_to_raw(sources_dir=sources_dir, output_path=raw_path)
+        else:
+            raise FileNotFoundError(f"Raw data file not found: {raw_path}")
+    else:
+        df_raw = pd.read_csv(raw_path, low_memory=False)
 
     # 1. Tách bảng tỷ lệ thắng của đội bóng (Team Win%)
     team_rows = df_raw[
@@ -444,3 +515,26 @@ def clean_raw_nba_data(
         nba_clean.to_csv(out_p, index=False)
 
     return nba_clean
+
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="NBA Data Engineering & Preprocessing Pipeline")
+    parser.add_argument("--sources-dir", type=str, default="data/raw/sources", help="Thư mục chứa các tệp nguồn ban đầu")
+    parser.add_argument("--raw-output", type=str, default="data/raw/1.csv", help="Đường dẫn lưu file thô tổng hợp (1.csv)")
+    parser.add_argument("--clean-output", type=str, default="data/processed/nba_clean.csv", help="Đường dẫn lưu file sạch (nba_clean.csv)")
+    args = parser.parse_args()
+
+    print("=" * 70)
+    print("KÍCH HOẠT PIPELINE TIỀN XỬ LÝ & TỔNG HỢP ĐA NGUỒN (PERSON 1)")
+    print("=" * 70)
+    
+    # Bước 0: Hợp nhất đa nguồn để tạo 1.csv
+    print(f"\n[BƯỚC 0] Thu thập & gộp các nguồn từ '{args.sources_dir}' thành '{args.raw_output}'...")
+    df_raw_master = synthesize_sources_to_raw(sources_dir=args.sources_dir, output_path=args.raw_output)
+    
+    # Bước 1-9: Làm sạch & trích xuất 24 đặc trưng tinh hoa
+    print(f"\n[BƯỚC 1-9] Tinh chỉnh dữ liệu và trích xuất đặc trưng -> '{args.clean_output}'...")
+    df_clean = clean_raw_nba_data(raw_csv_path=args.raw_output, output_clean_path=args.clean_output)
+    print(f"[HOÀN THÀNH] Bộ dữ liệu sạch đạt chuẩn: {df_clean.shape} (0 missing values).")
+

@@ -2222,7 +2222,7 @@ Omari Spellman,2019,val,LogisticRegression,0,5.284468275236569e-05
 Nik Stauskas,2017,val,LogisticRegression,0,0.0007221262505115359
 Nik Stauskas,2018,val,LogisticRegression,0,5.844931182081756e-06
 Nik Stauskas,2019,val,LogisticRegression,0,0.00016041879794992273
-Lance Stephenson,2017,val,LogisticRegression,0,0.00017811918621942106
+Lance Stephenson,2017,val,LogisticRegression,0,0.00031502401261467754
 Lance Stephenson,2018,val,LogisticRegression,0,0.003994745711785602
 Lance Stephenson,2019,val,LogisticRegression,0,0.00020871665411246708
 Rodney Stuckey,2017,val,LogisticRegression,0,0.0002593493948122619
@@ -2333,7 +2333,7 @@ Andrew Wiggins,2019,val,LogisticRegression,0,0.06751948299767876
 Alan Williams,2017,val,LogisticRegression,0,0.0002051078411595895
 C.J. Williams,2018,val,LogisticRegression,0,4.977373763361223e-05
 Deron Williams,2017,val,LogisticRegression,0,0.014948760894596024
-Derrick Williams,2017,val,LogisticRegression,0,0.00013605410318553207
+Derrick Williams,2017,val,LogisticRegression,0,6.670006107585844e-05
 Johnathan Williams,2019,val,LogisticRegression,0,8.560027913496921e-05
 Kenrich Williams,2019,val,LogisticRegression,0,0.00014384163461751408
 Lou Williams,2017,val,LogisticRegression,0,0.04089550350200293
@@ -7367,7 +7367,7 @@ Jordan Goodwin,2024,test,LogisticRegression,0,0.0008525489885733317
 Jordan Goodwin,2025,test,LogisticRegression,0,0.0002401443094499903
 Jordan Goodwin,2026,test,LogisticRegression,0,0.003740308367506884
 Aaron Gordon,2020,test,LogisticRegression,0,0.08795644463209937
-Aaron Gordon,2021,test,LogisticRegression,0,0.05393303383118783
+Aaron Gordon,2021,test,LogisticRegression,0,0.00685707223110297
 Aaron Gordon,2022,test,LogisticRegression,0,0.157523342611181
 Aaron Gordon,2023,test,LogisticRegression,0,0.455507503971241
 Aaron Gordon,2024,test,LogisticRegression,0,0.3486699468439544
@@ -8639,7 +8639,7 @@ Austin Reaves,2026,test,LogisticRegression,0,0.9249328029300374
 Cam Reddish,2020,test,LogisticRegression,0,0.00037249888724925884
 Cam Reddish,2021,test,LogisticRegression,0,0.004127255098033005
 Cam Reddish,2022,test,LogisticRegression,0,0.001051133301544534
-Cam Reddish,2023,test,LogisticRegression,0,0.0004623397218308445
+Cam Reddish,2023,test,LogisticRegression,0,0.0012533695001531518
 Cam Reddish,2024,test,LogisticRegression,0,9.981438555046643e-05
 Cam Reddish,2025,test,LogisticRegression,0,2.5482543332459852e-05
 JJ Redick,2020,test,LogisticRegression,0,0.009059097963626386
@@ -8738,7 +8738,7 @@ D'Angelo Russell,2021,test,LogisticRegression,0,0.12496923866582596
 D'Angelo Russell,2022,test,LogisticRegression,0,0.5290195856323475
 D'Angelo Russell,2023,test,LogisticRegression,0,0.4734106378703298
 D'Angelo Russell,2024,test,LogisticRegression,0,0.5092906504304644
-D'Angelo Russell,2025,test,LogisticRegression,0,0.009141741104663172
+D'Angelo Russell,2025,test,LogisticRegression,0,0.04858100419580611
 D'Angelo Russell,2026,test,LogisticRegression,0,0.0009501777671640675
 Matt Ryan,2024,test,LogisticRegression,0,3.427778759894129e-05
 Domantas Sabonis,2020,test,LogisticRegression,1,0.9476787562410112
@@ -8899,7 +8899,7 @@ Lance Stephenson,2022,test,LogisticRegression,0,0.0002188207027556629
 Lamar Stevens,2021,test,LogisticRegression,0,6.4666954333132846e-06
 Lamar Stevens,2022,test,LogisticRegression,0,0.00011629012645824718
 Lamar Stevens,2023,test,LogisticRegression,0,0.00013720893744180253
-Lamar Stevens,2024,test,LogisticRegression,0,0.0014253013228407595
+Lamar Stevens,2024,test,LogisticRegression,0,0.00010207145781001011
 Isaiah Stewart,2021,test,LogisticRegression,0,0.0007433236701403745
 Isaiah Stewart,2022,test,LogisticRegression,0,0.0010343854553936467
 Isaiah Stewart,2023,test,LogisticRegression,0,0.0013919567035818887
@@ -9300,7 +9300,7 @@ Guerschon Yabusele,2025,test,LogisticRegression,0,0.0020062331800812933
 Guerschon Yabusele,2026,test,LogisticRegression,0,0.0001645046714416658
 Thaddeus Young,2020,test,LogisticRegression,0,0.0014865655194509803
 Thaddeus Young,2021,test,LogisticRegression,0,0.06541053484329215
-Thaddeus Young,2022,test,LogisticRegression,0,0.00021827874641094024
+Thaddeus Young,2022,test,LogisticRegression,0,0.0005919851822955466
 Thaddeus Young,2023,test,LogisticRegression,0,5.247642925824624e-05
 Thaddeus Young,2024,test,LogisticRegression,0,1.1618503340104825e-05
 Trae Young,2020,test,LogisticRegression,1,0.9851775755740962
@@ -11781,7 +11781,7 @@ Lance Stephenson,2022,test,RandomForest,0,0.0
 Lamar Stevens,2021,test,RandomForest,0,0.0
 Lamar Stevens,2022,test,RandomForest,0,0.0
 Lamar Stevens,2023,test,RandomForest,0,0.0
-Lamar Stevens,2024,test,RandomForest,0,0.01
+Lamar Stevens,2024,test,RandomForest,0,0.0
 Isaiah Stewart,2021,test,RandomForest,0,0.0
 Isaiah Stewart,2022,test,RandomForest,0,0.0
 Isaiah Stewart,2023,test,RandomForest,0,0.0

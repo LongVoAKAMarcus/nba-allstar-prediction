@@ -44,8 +44,11 @@ venv.bak/
 *.sublime-workspace
 
 # Large raw datasets & models (keep directory structure via .gitkeep)
-data/raw/*
+data/raw/1.csv
+data/raw/*.csv
 !data/raw/.gitkeep
+!data/raw/sources/
+!data/raw/sources/*.csv
 models/*
 !models/.gitkeep
 
@@ -55,6 +58,7 @@ models/*
 
 # Output CSVs / temporary dumps
 *.csv
+!data/raw/sources/*.csv
 !data/processed/*.csv
 !reports/predictions.csv
 !sample_data/*.csv
