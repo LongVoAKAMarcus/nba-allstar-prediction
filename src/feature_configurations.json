@@ -1,0 +1,96 @@
+{
+    "raw_without_history": {
+        "features": [
+            "g",
+            "mp_per_game",
+            "pts_per_game",
+            "ast_per_game",
+            "trb_per_game",
+            "stl_per_game",
+            "blk_per_game",
+            "fg_percent",
+            "x3p_percent",
+            "ft_percent",
+            "team_win_pct",
+            "per",
+            "ts_percent",
+            "usg_percent",
+            "bpm",
+            "vorp",
+            "ws"
+        ],
+        "target": "All_Star",
+        "n_features": 17
+    },
+    "raw_with_history": {
+        "features": [
+            "g",
+            "mp_per_game",
+            "pts_per_game",
+            "ast_per_game",
+            "trb_per_game",
+            "stl_per_game",
+            "blk_per_game",
+            "fg_percent",
+            "x3p_percent",
+            "ft_percent",
+            "team_win_pct",
+            "per",
+            "ts_percent",
+            "usg_percent",
+            "bpm",
+            "vorp",
+            "ws",
+            "prev_allstar_count"
+        ],
+        "target": "All_Star",
+        "n_features": 18
+    },
+    "zscore_without_history": {
+        "features": [
+            "g",
+            "mp_per_game_zscore",
+            "pts_per_game_zscore",
+            "ast_per_game_zscore",
+            "trb_per_game_zscore",
+            "stl_per_game_zscore",
+            "blk_per_game_zscore",
+            "fg_percent",
+            "x3p_percent",
+            "ft_percent",
+            "team_win_pct",
+            "per_zscore",
+            "ts_percent",
+            "usg_percent",
+            "bpm",
+            "vorp_zscore",
+            "ws_zscore"
+        ],
+        "target": "All_Star",
+        "n_features": 17
+    },
+    "zscore_with_history": {
+        "features": [
+            "g",
+            "mp_per_game_zscore",
+            "pts_per_game_zscore",
+            "ast_per_game_zscore",
+            "trb_per_game_zscore",
+            "stl_per_game_zscore",
+            "blk_per_game_zscore",
+            "fg_percent",
+            "x3p_percent",
+            "ft_percent",
+            "team_win_pct",
+            "per_zscore",
+            "ts_percent",
+            "usg_percent",
+            "bpm",
+            "vorp_zscore",
+            "ws_zscore",
+            "prev_allstar_count"
+        ],
+        "target": "All_Star",
+        "n_features": 18
+    }
+}
