@@ -391,9 +391,9 @@ def plot_topk_test_seasons(
     ax.set_title("Độ chính xác Top-K theo từng mùa giải Test (2020 - 2026)\nSo sánh Dummy Baseline, Logistic Regression và Random Forest", fontsize=13, fontweight="bold", color="#003366", pad=14)
     ax.set_xticks(x)
     ax.set_xticklabels([f"Mùa {s}\n(K={k})" for s, k in zip(seasons, k_values)], fontsize=10.5, fontweight="bold")
-    ax.set_ylim(0, 108)
+    ax.set_ylim(0, 122)
     ax.grid(axis='y', linestyle='--', alpha=0.4)
-    ax.legend(loc="upper right", framealpha=0.95, fontsize=9.5)
+    ax.legend(loc="upper left", bbox_to_anchor=(0.01, 0.99), ncol=2, framealpha=0.95, fontsize=9.2, facecolor="white")
 
     plt.tight_layout()
     if output_path:
