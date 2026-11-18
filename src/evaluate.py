@@ -229,7 +229,7 @@ def plot_rf_confusion_matrix(
     if output_path:
         out_p = Path(output_path)
         out_p.parent.mkdir(parents=True, exist_ok=True)
-        plt.savefig(out_p, dpi=300, bbox_inches="tight")
+        plt.savefig(out_p, dpi=300, bbox_inches="tight", pad_inches=0.25)
         print(f"Đã lưu biểu đồ ma trận nhầm lẫn Random Forest ({split}): {out_p}")
     plt.close()
 
@@ -299,7 +299,7 @@ def plot_confusion_matrices_comparison(
     if output_path:
         out_p = Path(output_path)
         out_p.parent.mkdir(parents=True, exist_ok=True)
-        plt.savefig(out_p, dpi=300, bbox_inches="tight")
+        plt.savefig(out_p, dpi=300, bbox_inches="tight", pad_inches=0.25)
         print(f"Đã lưu biểu đồ so sánh ma trận nhầm lẫn: {out_p}")
     plt.close()
 
@@ -399,7 +399,7 @@ def plot_topk_test_seasons(
     if output_path:
         out_p = Path(output_path)
         out_p.parent.mkdir(parents=True, exist_ok=True)
-        plt.savefig(out_p, dpi=300, bbox_inches="tight")
+        plt.savefig(out_p, dpi=300, bbox_inches="tight", pad_inches=0.25)
         print(f"Đã lưu biểu đồ Top-K theo mùa: {out_p}")
     plt.close()
 
