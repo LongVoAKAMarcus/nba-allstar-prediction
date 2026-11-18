@@ -82,7 +82,7 @@ def compute_topk_accuracy_per_season(
             if k <= 0:
                 continue
 
-            sorted_group = s_group.sort_values(by="y_proba", ascending=False)
+            sorted_group = s_group.sort_values(by=["y_proba", "player"], ascending=[False, True])
             top_k = sorted_group.iloc[:k]
             hits = int(top_k["y_true"].sum())
             acc = float(hits / k)
@@ -339,7 +339,7 @@ def plot_topk_test_seasons(
         k = int(s_df[s_df["model"] == "RandomForest"]["y_true"].sum())
         k_values.append(k)
         for m in models:
-            m_s = s_df[s_df["model"] == m].sort_values(by="y_proba", ascending=False)
+            m_s = s_df[s_df["model"] == m].sort_values(by=["y_proba", "player"], ascending=[False, True])
             hits = int(m_s.iloc[:k]["y_true"].sum())
             acc = (hits / k) if k > 0 else 0.0
             data[m].append(acc * 100)
@@ -354,20 +354,28 @@ def plot_topk_test_seasons(
     rects_lr = ax.bar(x, data["LogisticRegression"], width, label=model_labels["LogisticRegression"], color=colors["LogisticRegression"], alpha=0.9, edgecolor="black", linewidth=0.8)
     rects_rf = ax.bar(x + width, data["RandomForest"], width, label=model_labels["RandomForest"], color=colors["RandomForest"], alpha=0.9, edgecolor="black", linewidth=0.8)
 
-    # Annotate bars
-    for rect, hits, k in zip(rects_lr, hit_counts["LogisticRegression"], k_values):
-        height = rect.get_height()
-        ax.annotate(f"{hits}/{k}\n({height:.1f}%)",
-                    xy=(rect.get_x() + rect.get_width() / 2, height),
-                    xytext=(0, 4), textcoords="offset points",
-                    ha='center', va='bottom', fontsize=9, fontweight='bold', color="#0f3b5f")
+    # Annotate bars with intelligent vertical staggering to prevent label overlap
+    for rect_l, rect_r, hits_l, hits_r, k in zip(rects_lr, rects_rf, hit_counts["LogisticRegression"], hit_counts["RandomForest"], k_values):
+        h_l = rect_l.get_height()
+        h_r = rect_r.get_height()
+        
+        # When heights are within 3%, offset LR higher and RF lower to avoid collision
+        if abs(h_l - h_r) < 3.0:
+            offset_l = (0, 16)
+            offset_r = (0, 4)
+        else:
+            offset_l = (0, 5)
+            offset_r = (0, 5)
+            
+        ax.annotate(f"{hits_l}/{k}\n({h_l:.1f}%)",
+                    xy=(rect_l.get_x() + rect_l.get_width() / 2, h_l),
+                    xytext=offset_l, textcoords="offset points",
+                    ha='center', va='bottom', fontsize=8.8, fontweight='bold', color="#0f3b5f")
 
-    for rect, hits, k in zip(rects_rf, hit_counts["RandomForest"], k_values):
-        height = rect.get_height()
-        ax.annotate(f"{hits}/{k}\n({height:.1f}%)",
-                    xy=(rect.get_x() + rect.get_width() / 2, height),
-                    xytext=(0, 4), textcoords="offset points",
-                    ha='center', va='bottom', fontsize=9, fontweight='bold', color="#135213")
+        ax.annotate(f"{hits_r}/{k}\n({h_r:.1f}%)",
+                    xy=(rect_r.get_x() + rect_r.get_width() / 2, h_r),
+                    xytext=offset_r, textcoords="offset points",
+                    ha='center', va='bottom', fontsize=8.8, fontweight='bold', color="#135213")
 
     for rect, hits, k in zip(rects_dummy, hit_counts["Dummy"], k_values):
         height = rect.get_height()
@@ -444,7 +452,6 @@ if __name__ == "__main__":
     print("XUẤT BIỂU ĐỒ ĐÁNH GIÁ VÀO figures/evaluation/")
     print("=" * 50)
     fig_eval_dir = base_dir / "figures" / "evaluation"
-    plot_rf_confusion_matrix(df_preds, split="val", threshold=0.5, output_path=fig_eval_dir / "rf_confusion_matrix_val.png")
     plot_rf_confusion_matrix(df_preds, split="test", threshold=0.5, output_path=fig_eval_dir / "rf_confusion_matrix.png")
     plot_confusion_matrices_comparison(df_preds, split="test", threshold=0.5, output_path=fig_eval_dir / "confusion_matrices_comparison.png")
     plot_topk_test_seasons(df_preds, split="test", output_path=fig_eval_dir / "models_topk_test_seasons.png")
