@@ -21,7 +21,7 @@ def load_predictions(csv_path: Union[str, Path]) -> pd.DataFrame:
         raise FileNotFoundError(f"Predictions file not found at: {p}")
 
     df = pd.read_csv(p)
-    expected_cols = {"season", "player_id", "player", "model", "split", "y_true", "y_proba"}
+    expected_cols = {"season", "player", "model", "split", "y_true", "y_proba"}
     missing = expected_cols - set(df.columns)
     if missing:
         raise ValueError(f"predictions.csv missing required columns: {missing}")
@@ -100,14 +100,19 @@ def compute_topk_accuracy_per_season(
 
 def get_error_cases(
     df: pd.DataFrame,
-    model_name: str,
-    split: str = "val",
+    model_name: Optional[str] = None,
+    split: Optional[str] = None,
     threshold: float = 0.5
 ) -> Dict[str, pd.DataFrame]:
     """
     Extract False Positives (FP) and False Negatives (FN).
     """
-    sub = df[(df["model"] == model_name) & (df["split"] == split)].copy()
+    sub = df.copy()
+    if model_name is not None and "model" in sub.columns:
+        sub = sub[sub["model"] == model_name]
+    if split is not None and "split" in sub.columns:
+        sub = sub[sub["split"] == split]
+
     if sub.empty:
         return {"false_positives": pd.DataFrame(), "false_negatives": pd.DataFrame()}
 
@@ -209,16 +214,16 @@ def plot_rf_confusion_matrix(
     )
 
     threshold_color = vmax_val / 2
+    ax.set_xticks(np.arange(-0.5, 2, 1), minor=True)
+    ax.set_yticks(np.arange(-0.5, 2, 1), minor=True)
+    ax.grid(which="minor", color="white", linestyle="-", linewidth=3)
+    ax.tick_params(which="minor", bottom=False, left=False)
+
     for r in range(2):
         for c in range(2):
             val = cm[r, c]
             txt_color = "white" if val > threshold_color else "black"
             ax.text(c, r, labels[r][c], ha="center", va="center", fontsize=13.5, fontweight="bold", color=txt_color)
-
-    ax.set_xticks(np.arange(-0.5, 2, 1), minor=True)
-    ax.set_yticks(np.arange(-0.5, 2, 1), minor=True)
-    ax.grid(which="minor", color="white", linestyle="-", linewidth=3)
-    ax.tick_params(which="minor", bottom=False, left=False)
 
     plt.tight_layout()
     if output_path:
@@ -279,16 +284,16 @@ def plot_confusion_matrices_comparison(
         ax.set_ylabel("Nhãn thực tế (True Ground)", fontsize=12, fontweight="bold", labelpad=10)
         ax.set_title(title, fontsize=12.5, fontweight="bold", color="#003366", pad=12)
 
+        ax.set_xticks(np.arange(-0.5, 2, 1), minor=True)
+        ax.set_yticks(np.arange(-0.5, 2, 1), minor=True)
+        ax.grid(which="minor", color="white", linestyle="-", linewidth=3)
+        ax.tick_params(which="minor", bottom=False, left=False)
+
         for r in range(2):
             for c in range(2):
                 val = cm[r, c]
                 txt_color = "white" if val > 1200 else "black"
                 ax.text(c, r, labels[r][c], ha="center", va="center", fontsize=13, fontweight="bold", color=txt_color)
-
-        ax.set_xticks(np.arange(-0.5, 2, 1), minor=True)
-        ax.set_yticks(np.arange(-0.5, 2, 1), minor=True)
-        ax.grid(which="minor", color="white", linestyle="-", linewidth=3)
-        ax.tick_params(which="minor", bottom=False, left=False)
 
     plt.tight_layout()
     if output_path:
@@ -296,6 +301,106 @@ def plot_confusion_matrices_comparison(
         out_p.parent.mkdir(parents=True, exist_ok=True)
         plt.savefig(out_p, dpi=300, bbox_inches="tight")
         print(f"Đã lưu biểu đồ so sánh ma trận nhầm lẫn: {out_p}")
+    plt.close()
+
+
+def plot_topk_test_seasons(
+    pred_df: pd.DataFrame,
+    split: str = "test",
+    output_path: Optional[Union[str, Path]] = None
+) -> None:
+    """
+    Plot side-by-side bar chart of Top-K Hit Rate per season on the Test set (2020-2026).
+    Compares Dummy Baseline, Logistic Regression, and Random Forest.
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    sub = pred_df[pred_df["split"] == split].copy()
+    seasons = sorted(sub["season"].unique())
+    models = ["Dummy", "LogisticRegression", "RandomForest"]
+    model_labels = {
+        "Dummy": "Dummy Baseline",
+        "LogisticRegression": "Logistic Regression (Mô hình 1)",
+        "RandomForest": "Random Forest (Mô hình 2)"
+    }
+    colors = {
+        "Dummy": "#d95f02",
+        "LogisticRegression": "#1f78b4",
+        "RandomForest": "#2ca02c"
+    }
+
+    data = {m: [] for m in models}
+    k_values = []
+    hit_counts = {m: [] for m in models}
+
+    for s in seasons:
+        s_df = sub[sub["season"] == s]
+        k = int(s_df[s_df["model"] == "RandomForest"]["y_true"].sum())
+        k_values.append(k)
+        for m in models:
+            m_s = s_df[s_df["model"] == m].sort_values(by="y_proba", ascending=False)
+            hits = int(m_s.iloc[:k]["y_true"].sum())
+            acc = (hits / k) if k > 0 else 0.0
+            data[m].append(acc * 100)
+            hit_counts[m].append(hits)
+
+    x = np.arange(len(seasons))
+    width = 0.26
+
+    fig, ax = plt.subplots(figsize=(13.5, 6.5), dpi=300)
+
+    rects_dummy = ax.bar(x - width, data["Dummy"], width, label=model_labels["Dummy"], color=colors["Dummy"], alpha=0.85, edgecolor="black", linewidth=0.8)
+    rects_lr = ax.bar(x, data["LogisticRegression"], width, label=model_labels["LogisticRegression"], color=colors["LogisticRegression"], alpha=0.9, edgecolor="black", linewidth=0.8)
+    rects_rf = ax.bar(x + width, data["RandomForest"], width, label=model_labels["RandomForest"], color=colors["RandomForest"], alpha=0.9, edgecolor="black", linewidth=0.8)
+
+    # Annotate bars
+    for rect, hits, k in zip(rects_lr, hit_counts["LogisticRegression"], k_values):
+        height = rect.get_height()
+        ax.annotate(f"{hits}/{k}\n({height:.1f}%)",
+                    xy=(rect.get_x() + rect.get_width() / 2, height),
+                    xytext=(0, 4), textcoords="offset points",
+                    ha='center', va='bottom', fontsize=9, fontweight='bold', color="#0f3b5f")
+
+    for rect, hits, k in zip(rects_rf, hit_counts["RandomForest"], k_values):
+        height = rect.get_height()
+        ax.annotate(f"{hits}/{k}\n({height:.1f}%)",
+                    xy=(rect.get_x() + rect.get_width() / 2, height),
+                    xytext=(0, 4), textcoords="offset points",
+                    ha='center', va='bottom', fontsize=9, fontweight='bold', color="#135213")
+
+    for rect, hits, k in zip(rects_dummy, hit_counts["Dummy"], k_values):
+        height = rect.get_height()
+        ax.annotate(f"{hits}/{k}",
+                    xy=(rect.get_x() + rect.get_width() / 2, height),
+                    xytext=(0, 3), textcoords="offset points",
+                    ha='center', va='bottom', fontsize=8, color="#8c3b00")
+
+    # Mean lines across Test set (186 All-Stars)
+    lr_total_hits = sum(hit_counts["LogisticRegression"])
+    rf_total_hits = sum(hit_counts["RandomForest"])
+    total_k = sum(k_values)
+    lr_overall_pct = (lr_total_hits / total_k) * 100
+    rf_overall_pct = (rf_total_hits / total_k) * 100
+
+    ax.axhline(lr_overall_pct, color=colors["LogisticRegression"], linestyle="--", linewidth=1.5, alpha=0.75, label=f"LR TB Test: {lr_overall_pct:.2f}% ({lr_total_hits}/{total_k})")
+    ax.axhline(rf_overall_pct, color=colors["RandomForest"], linestyle=":", linewidth=1.6, alpha=0.75, label=f"RF TB Test: {rf_overall_pct:.2f}% ({rf_total_hits}/{total_k})")
+
+    ax.set_ylabel("Độ chính xác Top-K (Top-K Hit Rate %)", fontsize=12, fontweight="bold", labelpad=10)
+    ax.set_xlabel("Mùa giải kiểm thử (Test Season) kèm số suất All-Star thực tế (K)", fontsize=12, fontweight="bold", labelpad=10)
+    ax.set_title("Độ chính xác Top-K theo từng mùa giải Test (2020 - 2026)\nSo sánh Dummy Baseline, Logistic Regression và Random Forest", fontsize=13, fontweight="bold", color="#003366", pad=14)
+    ax.set_xticks(x)
+    ax.set_xticklabels([f"Mùa {s}\n(K={k})" for s, k in zip(seasons, k_values)], fontsize=10.5, fontweight="bold")
+    ax.set_ylim(0, 108)
+    ax.grid(axis='y', linestyle='--', alpha=0.4)
+    ax.legend(loc="upper right", framealpha=0.95, fontsize=9.5)
+
+    plt.tight_layout()
+    if output_path:
+        out_p = Path(output_path)
+        out_p.parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(out_p, dpi=300, bbox_inches="tight")
+        print(f"Đã lưu biểu đồ Top-K theo mùa: {out_p}")
     plt.close()
 
 
@@ -330,9 +435,16 @@ if __name__ == "__main__":
     print(topk_val.to_string(index=False))
 
     print("\n" + "=" * 50)
-    print("XUẤT BIỂU ĐỒ MA TRẬN NHẦM LẪN VÀO figures/evaluation/")
+    print("TOP-K ACCURACY PER SEASON (TEST: 2020-2026)")
+    print("=" * 50)
+    topk_test = compute_topk_accuracy_per_season(df_preds[df_preds["split"] == "test"])
+    print(topk_test.to_string(index=False))
+
+    print("\n" + "=" * 50)
+    print("XUẤT BIỂU ĐỒ ĐÁNH GIÁ VÀO figures/evaluation/")
     print("=" * 50)
     fig_eval_dir = base_dir / "figures" / "evaluation"
     plot_rf_confusion_matrix(df_preds, split="val", threshold=0.5, output_path=fig_eval_dir / "rf_confusion_matrix_val.png")
     plot_rf_confusion_matrix(df_preds, split="test", threshold=0.5, output_path=fig_eval_dir / "rf_confusion_matrix.png")
     plot_confusion_matrices_comparison(df_preds, split="test", threshold=0.5, output_path=fig_eval_dir / "confusion_matrices_comparison.png")
+    plot_topk_test_seasons(df_preds, split="test", output_path=fig_eval_dir / "models_topk_test_seasons.png")

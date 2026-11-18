@@ -12,9 +12,10 @@ nba-allstar-prediction/
 │   ├── raw/                  # Chứa dữ liệu thô (nba_player_stats.csv, ...)
 │   └── processed/            # Dữ liệu đã làm sạch & phân chia (train.csv, val.csv, test.csv)
 ├── notebooks/
-│   ├── 01_data_cleaning.ipynb    # Tiền xử lý, khử khác biệt thời kỳ & pipeline
-│   ├── 02_model_training.ipynb   # Huấn luyện Mô hình 1 & 2 và xuất predictions.csv
-│   └── 03_evaluation.ipynb       # Đánh giá metrics, Top-K per season & Error analysis
+│   ├── 01_data_cleaning.ipynb        # Tiền xử lý, khử khác biệt thời kỳ & pipeline
+│   ├── 02_logistic_regression.ipynb  # Huấn luyện & giải thích Mô hình 1 (Logistic Regression)
+│   ├── 03_random_forest.ipynb        # Huấn luyện, Gini & Permutation MDI Mô hình 2 (Random Forest)
+│   └── 04_model_evaluation.ipynb     # Đánh giá Benchmark đa chiều, Top-K per season & Error analysis
 ├── src/
 │   ├── __init__.py
 │   ├── preprocessing.py      # Module xử lý dữ liệu và pipeline scikit-learn

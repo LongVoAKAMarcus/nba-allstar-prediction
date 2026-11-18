@@ -49,7 +49,7 @@ data/raw/*.csv
 !data/raw/.gitkeep
 !data/raw/sources/
 !data/raw/sources/*.csv
-models/*
+!models/*.joblib
 !models/.gitkeep
 
 # Allow processed data and prediction reports for team collaboration
