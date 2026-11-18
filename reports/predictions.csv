@@ -1779,7 +1779,7 @@ John Collins,2021,test,Dummy,0,0.07949097881983788
 John Collins,2021,test,LogisticRegression,0,0.3964031925404482
 John Collins,2021,test,RandomForest,0,0.09
 John Konchar,2021,test,Dummy,0,0.07949097881983788
-John Konchar,2021,test,LogisticRegression,0,1.9575331634995532e-05
+John Konchar,2021,test,LogisticRegression,0,1.957533163499553e-05
 John Konchar,2021,test,RandomForest,0,0.0
 John Wall,2021,test,Dummy,0,0.07949097881983788
 John Wall,2021,test,LogisticRegression,0,0.5016823107144648
@@ -2985,7 +2985,7 @@ Jimmy Butler,2022,test,Dummy,1,0.07949097881983788
 Jimmy Butler,2022,test,LogisticRegression,1,0.994444327761612
 Jimmy Butler,2022,test,RandomForest,1,0.91
 Jock Landale,2022,test,Dummy,0,0.07949097881983788
-Jock Landale,2022,test,LogisticRegression,0,1.9256089424874894e-05
+Jock Landale,2022,test,LogisticRegression,0,1.925608942487489e-05
 Jock Landale,2022,test,RandomForest,0,0.0
 Joe Ingles,2022,test,Dummy,0,0.07949097881983788
 Joe Ingles,2022,test,LogisticRegression,0,0.0006095225181743
@@ -3438,7 +3438,7 @@ Rodney McGruder,2022,test,Dummy,0,0.07949097881983788
 Rodney McGruder,2022,test,LogisticRegression,0,5.269720952065588e-06
 Rodney McGruder,2022,test,RandomForest,0,0.0
 Romeo Langford,2022,test,Dummy,0,0.07949097881983788
-Romeo Langford,2022,test,LogisticRegression,0,2.8088305216777917e-05
+Romeo Langford,2022,test,LogisticRegression,0,2.808830521677792e-05
 Romeo Langford,2022,test,RandomForest,0,0.0
 Royce O'Neale,2022,test,Dummy,0,0.07949097881983788
 Royce O'Neale,2022,test,LogisticRegression,0,0.0068828211076577
@@ -4581,7 +4581,7 @@ Nikola Jokić,2023,test,Dummy,1,0.07949097881983788
 Nikola Jokić,2023,test,LogisticRegression,1,0.9999360545666772
 Nikola Jokić,2023,test,RandomForest,1,0.93
 Nikola Jović,2023,test,Dummy,0,0.07949097881983788
-Nikola Jović,2023,test,LogisticRegression,0,2.4651089940025132e-05
+Nikola Jović,2023,test,LogisticRegression,0,2.465108994002513e-05
 Nikola Jović,2023,test,RandomForest,0,0.0
 Nikola Vučević,2023,test,Dummy,0,0.07949097881983788
 Nikola Vučević,2023,test,LogisticRegression,0,0.780478430752212
@@ -5943,7 +5943,7 @@ Santi Aldama,2024,test,Dummy,0,0.07949097881983788
 Santi Aldama,2024,test,LogisticRegression,0,0.001977535768034
 Santi Aldama,2024,test,RandomForest,0,0.0
 Sasha Vezenkov,2024,test,Dummy,0,0.07949097881983788
-Sasha Vezenkov,2024,test,LogisticRegression,0,2.8884417352153694e-05
+Sasha Vezenkov,2024,test,LogisticRegression,0,2.888441735215369e-05
 Sasha Vezenkov,2024,test,RandomForest,0,0.0
 Scoot Henderson,2024,test,Dummy,0,0.07949097881983788
 Scoot Henderson,2024,test,LogisticRegression,0,0.0058335676331078
@@ -6015,7 +6015,7 @@ Thomas Bryant,2024,test,Dummy,0,0.07949097881983788
 Thomas Bryant,2024,test,LogisticRegression,0,0.000121236666084
 Thomas Bryant,2024,test,RandomForest,0,0.0
 Théo Maledon,2024,test,Dummy,0,0.07949097881983788
-Théo Maledon,2024,test,LogisticRegression,0,1.9109384082761397e-06
+Théo Maledon,2024,test,LogisticRegression,0,1.91093840827614e-06
 Théo Maledon,2024,test,RandomForest,0,0.0
 Tim Hardaway Jr.,2024,test,Dummy,0,0.07949097881983788
 Tim Hardaway Jr.,2024,test,LogisticRegression,0,0.0108849800378499
@@ -6063,7 +6063,7 @@ Tristan Thompson,2024,test,Dummy,0,0.07949097881983788
 Tristan Thompson,2024,test,LogisticRegression,0,2.243498910125315e-05
 Tristan Thompson,2024,test,RandomForest,0,0.0
 Troy Brown Jr.,2024,test,Dummy,0,0.07949097881983788
-Troy Brown Jr.,2024,test,LogisticRegression,0,2.7563491105751836e-05
+Troy Brown Jr.,2024,test,LogisticRegression,0,2.756349110575184e-05
 Troy Brown Jr.,2024,test,RandomForest,0,0.0
 Tyler Herro,2024,test,Dummy,0,0.07949097881983788
 Tyler Herro,2024,test,LogisticRegression,0,0.3263659071008951
@@ -8622,7 +8622,7 @@ Will Riley,2026,test,Dummy,0,0.07949097881983788
 Will Riley,2026,test,LogisticRegression,0,0.0001170834807906
 Will Riley,2026,test,RandomForest,0,0.0
 Yanic Konan Niederhäuser,2026,test,Dummy,0,0.07949097881983788
-Yanic Konan Niederhäuser,2026,test,LogisticRegression,0,2.8443825203262437e-05
+Yanic Konan Niederhäuser,2026,test,LogisticRegression,0,2.844382520326244e-05
 Yanic Konan Niederhäuser,2026,test,RandomForest,0,0.0
 Yuki Kawamura,2026,test,Dummy,0,0.07949097881983788
 Yuki Kawamura,2026,test,LogisticRegression,0,4.20104046042724e-06
@@ -8712,7 +8712,7 @@ Anthony Tolliver,2017,val,Dummy,0,0.07949097881983788
 Anthony Tolliver,2017,val,LogisticRegression,0,0.0001072025814424
 Anthony Tolliver,2017,val,RandomForest,0,0.0
 Archie Goodwin,2017,val,Dummy,0,0.07949097881983788
-Archie Goodwin,2017,val,LogisticRegression,0,2.6069495376848375e-05
+Archie Goodwin,2017,val,LogisticRegression,0,2.606949537684837e-05
 Archie Goodwin,2017,val,RandomForest,0,0.0
 Aron Baynes,2017,val,Dummy,0,0.07949097881983788
 Aron Baynes,2017,val,LogisticRegression,0,5.086725601678775e-05
@@ -8931,7 +8931,7 @@ Donatas Motiejūnas,2017,val,Dummy,0,0.07949097881983788
 Donatas Motiejūnas,2017,val,LogisticRegression,0,1.3386956787662054e-05
 Donatas Motiejūnas,2017,val,RandomForest,0,0.0
 Dorian Finney-Smith,2017,val,Dummy,0,0.07949097881983788
-Dorian Finney-Smith,2017,val,LogisticRegression,0,1.8700835930210276e-05
+Dorian Finney-Smith,2017,val,LogisticRegression,0,1.870083593021028e-05
 Dorian Finney-Smith,2017,val,RandomForest,0,0.0
 Doug McDermott,2017,val,Dummy,0,0.07949097881983788
 Doug McDermott,2017,val,LogisticRegression,0,0.0002914938200171
@@ -9345,7 +9345,7 @@ Marc Gasol,2017,val,Dummy,1,0.07949097881983788
 Marc Gasol,2017,val,LogisticRegression,1,0.8578187096824351
 Marc Gasol,2017,val,RandomForest,1,0.48
 Marcelo Huertas,2017,val,Dummy,0,0.07949097881983788
-Marcelo Huertas,2017,val,LogisticRegression,0,1.8537281363254677e-06
+Marcelo Huertas,2017,val,LogisticRegression,0,1.853728136325468e-06
 Marcelo Huertas,2017,val,RandomForest,0,0.0
 Marcin Gortat,2017,val,Dummy,0,0.07949097881983788
 Marcin Gortat,2017,val,LogisticRegression,0,0.0757422805534797
@@ -9897,7 +9897,7 @@ Brandon Ingram,2018,val,Dummy,0,0.07949097881983788
 Brandon Ingram,2018,val,LogisticRegression,0,0.0724870460923482
 Brandon Ingram,2018,val,RandomForest,0,0.01
 Briante Weber,2018,val,Dummy,0,0.07949097881983788
-Briante Weber,2018,val,LogisticRegression,0,2.6380677609871037e-05
+Briante Weber,2018,val,LogisticRegression,0,2.638067760987104e-05
 Briante Weber,2018,val,RandomForest,0,0.0
 Brook Lopez,2018,val,Dummy,0,0.07949097881983788
 Brook Lopez,2018,val,LogisticRegression,0,0.0155045401884683
@@ -10017,7 +10017,7 @@ DeAndre Liggins,2018,val,Dummy,0,0.07949097881983788
 DeAndre Liggins,2018,val,LogisticRegression,0,1.1868406641106671e-06
 DeAndre Liggins,2018,val,RandomForest,0,0.0
 DeAndre' Bembry,2018,val,Dummy,0,0.07949097881983788
-DeAndre' Bembry,2018,val,LogisticRegression,0,2.1486293565086517e-05
+DeAndre' Bembry,2018,val,LogisticRegression,0,2.148629356508652e-05
 DeAndre' Bembry,2018,val,RandomForest,0,0.0
 DeMar DeRozan,2018,val,Dummy,1,0.07949097881983788
 DeMar DeRozan,2018,val,LogisticRegression,1,0.9890603999699198
@@ -10386,7 +10386,7 @@ Josh Richardson,2018,val,Dummy,0,0.07949097881983788
 Josh Richardson,2018,val,LogisticRegression,0,0.085986563243202
 Josh Richardson,2018,val,RandomForest,0,0.0
 José Calderón,2018,val,Dummy,0,0.07949097881983788
-José Calderón,2018,val,LogisticRegression,0,2.7041259568693997e-05
+José Calderón,2018,val,LogisticRegression,0,2.7041259568694e-05
 José Calderón,2018,val,RandomForest,0,0.0
 Jrue Holiday,2018,val,Dummy,0,0.07949097881983788
 Jrue Holiday,2018,val,LogisticRegression,0,0.8347024799047238
@@ -10581,7 +10581,7 @@ Maurice Harkless,2018,val,Dummy,0,0.07949097881983788
 Maurice Harkless,2018,val,LogisticRegression,0,0.0004129787128324
 Maurice Harkless,2018,val,RandomForest,0,0.0
 Maxi Kleber,2018,val,Dummy,0,0.07949097881983788
-Maxi Kleber,2018,val,LogisticRegression,0,2.4024039645120895e-05
+Maxi Kleber,2018,val,LogisticRegression,0,2.402403964512089e-05
 Maxi Kleber,2018,val,RandomForest,0,0.0
 Michael Beasley,2018,val,Dummy,0,0.07949097881983788
 Michael Beasley,2018,val,LogisticRegression,0,0.0068583485235814
