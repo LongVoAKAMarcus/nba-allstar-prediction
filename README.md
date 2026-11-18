@@ -87,8 +87,9 @@ Các thư viện chính bao gồm:
 
 ## 4. Phân công công việc & Quy trình Notebooks
 
-| Notebook | Thành viên phụ trách | Nhiệm vụ chính |
+| Notebook | Người thực hiện | Nhiệm vụ chính |
 | :--- | :--- | :--- |
-| **`01_data_cleaning.ipynb`** | **Thành viên 1** (Data Engineering) | Tải dữ liệu, lọc mùa giải hiện đại, khử trùng lặp cầu thủ chuyển nhượng, chuẩn hóa Z-score theo mùa, chia tập dữ liệu và xây dựng tiền xử lý pipeline. |
-| **`02_model_training.ipynb`** | **Thành viên 2** (Model Development) | Khởi tạo Mô hình 1 (Logistic Regression) và Mô hình 2 (Random Forest), huấn luyện trên tập Train, dự đoán xác suất và xuất `reports/predictions.csv`, lưu trữ artifacts vào `models/`. |
-| **`03_evaluation.ipynb`** | **Thành viên 3** (Performance Analysis) | Nạp `predictions.csv`, tính metrics phân loại, đánh giá độ chính xác Top-K theo từng mùa giải, phân tích trường hợp lỗi (FP/FN), và trực quan hóa biểu đồ. |
+| **`01_data_cleaning.ipynb`** | **Lê Quý Dũng** (Data Engineering) | Tải dữ liệu từ 5 nguồn, khử trùng lặp cầu thủ chuyển đổi đội, chuẩn hóa Z-score theo mùa, chia tập dữ liệu Train/Val/Test chống rò rỉ thời gian. |
+| **`02_logistic_regression.ipynb`** | **Thành viên 2** (Linear Models) | Xây dựng Mô hình 1 (Logistic Regression), tối ưu L-BFGS, cân bằng trọng số nhãn balanced và trích xuất hệ số hồi quy. |
+| **`03_random_forest.ipynb`** | **Võ Thái Bảo Long** (Tree Ensemble) | Xây dựng Mô hình 2 (Random Forest Classifier 100 cây), phân tích Gini Feature Importance, tối ưu hóa ngưỡng cắt tau*=0.35 và lưu mô hình vào `models/RandomForest.joblib`. |
+| **`04_model_evaluation.ipynb`** | **Võ Thái Bảo Long** (Performance Analysis) | Đánh giá Benchmark đa chiều (PR-AUC, ROC-AUC, F1), kiểm toán Top-K Season Accuracy, mổ xẻ ca sai lệch (FP/FN) và trực quan hóa toàn bộ biểu đồ đường cong. |

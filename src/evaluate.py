@@ -1,286 +1,302 @@
-"""
-Evaluation module for NBA All-Star Prediction.
-
-Provides functions to compute standard classification metrics, NBA-specific
-Top-K season accuracy (simulating 24 All-Star selections per season), error case analysis
-(False Positives / False Negatives), and multi-model benchmark reporting.
-"""
-
+import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 import numpy as np
 import pandas as pd
-from sklearn.metrics import (
-    average_precision_score,
-    f1_score,
-    precision_score,
-    recall_score,
-    roc_auc_score,
-)
+
+# UTF-8 configuration
+if sys.stdout and hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 
 
 def load_predictions(csv_path: Union[str, Path]) -> pd.DataFrame:
     """
-    Load standardized predictions CSV.
-
-    Expected columns: ['player', 'season', 'split', 'model', 'y_true', 'y_proba']
-
-    Parameters
-    ----------
-    csv_path : str or Path
-        Path to predictions.csv.
-
-    Returns
-    -------
-    pd.DataFrame
-        Loaded predictions dataframe.
+    Load reports/predictions.csv with appropriate data types.
     """
-    pred_path = Path(csv_path)
-    if not pred_path.exists():
-        raise FileNotFoundError(f"Predictions file not found at: {pred_path}")
-    df = pd.read_csv(pred_path)
-    expected_cols = {"player", "season", "split", "model", "y_true", "y_proba"}
+    p = Path(csv_path)
+    if not p.exists():
+        raise FileNotFoundError(f"Predictions file not found at: {p}")
+
+    df = pd.read_csv(p)
+    expected_cols = {"season", "player_id", "player", "model", "split", "y_true", "y_proba"}
     missing = expected_cols - set(df.columns)
     if missing:
-        raise ValueError(f"Predictions file missing required columns: {missing}")
+        raise ValueError(f"predictions.csv missing required columns: {missing}")
+
     return df
 
 
 def compute_classification_metrics(
-    y_true: Union[pd.Series, np.ndarray, List[int]],
-    y_proba: Union[pd.Series, np.ndarray, List[float]],
+    y_true: np.ndarray,
+    y_proba: np.ndarray,
     threshold: float = 0.5
 ) -> Dict[str, float]:
     """
-    Compute key classification metrics for NBA All-Star prediction:
-    - Precision
-    - Recall
-    - F1 Score
-    - PR-AUC (Average Precision Score)
-    - ROC-AUC
-
-    Parameters
-    ----------
-    y_true : pd.Series, np.ndarray, or list
-        Ground truth binary labels (1 = All-Star, 0 = Non-All-Star).
-    y_proba : pd.Series, np.ndarray, or list
-        Predicted probabilities for the positive class.
-    threshold : float, default=0.5
-        Decision threshold for converting probabilities to binary predictions.
-
-    Returns
-    -------
-    Dict[str, float]
-        Dictionary with keys: 'precision', 'recall', 'f1', 'pr_auc', 'roc_auc'.
+    Compute standard academic binary classification metrics.
     """
-    y_t = np.asarray(y_true).ravel()
-    y_p = np.asarray(y_proba).ravel()
-    y_pred = (y_p >= threshold).astype(int)
+    from sklearn.metrics import (
+        average_precision_score,
+        f1_score,
+        precision_score,
+        recall_score,
+        roc_auc_score,
+    )
 
-    # Handle single-class edge case
-    has_positives = np.any(y_t == 1)
-    has_negatives = np.any(y_t == 0)
+    y_pred = (y_proba >= threshold).astype(int)
 
-    prec = float(precision_score(y_t, y_pred, zero_division=0))
-    rec = float(recall_score(y_t, y_pred, zero_division=0))
-    f1 = float(f1_score(y_t, y_pred, zero_division=0))
+    # In case a model outputs constant probabilities
+    has_pos = bool(np.sum(y_true == 1) > 0)
+    has_neg = bool(np.sum(y_true == 0) > 0)
 
-    if has_positives and has_negatives:
-        try:
-            pr_auc = float(average_precision_score(y_t, y_p))
-        except Exception:
-            pr_auc = np.nan
-
-        try:
-            roc_auc = float(roc_auc_score(y_t, y_p))
-        except Exception:
-            roc_auc = np.nan
-    else:
-        pr_auc = np.nan
-        roc_auc = np.nan
+    pr_auc = average_precision_score(y_true, y_proba) if has_pos else 0.0
+    roc_auc = roc_auc_score(y_true, y_proba) if (has_pos and has_neg) else 0.5
 
     return {
-        "precision": prec,
-        "recall": rec,
-        "f1": f1,
-        "pr_auc": pr_auc,
-        "roc_auc": roc_auc,
+        "precision": float(precision_score(y_true, y_pred, zero_division=0)),
+        "recall": float(recall_score(y_true, y_pred, zero_division=0)),
+        "f1": float(f1_score(y_true, y_pred, zero_division=0)),
+        "pr_auc": float(pr_auc),
+        "roc_auc": float(roc_auc),
     }
 
 
 def compute_topk_accuracy_per_season(
-    pred_df: pd.DataFrame,
-    season_col: str = "season",
-    model_col: str = "model",
-    y_true_col: str = "y_true",
-    y_proba_col: str = "y_proba",
-    player_col: str = "player"
+    df: pd.DataFrame,
+    k_per_season: Optional[Dict[int, int]] = None
 ) -> pd.DataFrame:
     """
-    Compute Top-K selection accuracy for each NBA season.
-    For each season, let k = sum(y_true) (the exact number of actual All-Stars that season, typically 24-28).
-    Select the k players with the highest predicted probability (y_proba).
-    Top-K Accuracy = (number of actual All-Stars in top-k) / k.
-
-    If multiple models are present in pred_df, calculates Top-K accuracy separately
-    for each model and season.
-
-    Parameters
-    ----------
-    pred_df : pd.DataFrame
-        Predictions dataframe containing season, y_true, y_proba (and optionally model, player).
-    season_col : str, default='season'
-        Column name identifying season.
-    model_col : str, default='model'
-        Column name identifying model.
-    y_true_col : str, default='y_true'
-        Column name for ground truth binary labels.
-    y_proba_col : str, default='y_proba'
-        Column name for predicted probabilities.
-    player_col : str, default='player'
-        Column name for player name.
-
-    Returns
-    -------
-    pd.DataFrame
-        Dataframe containing columns:
-        ['model', 'season', 'k', 'hits', 'topk_accuracy']
+    Compute domain-specific Top-K accuracy for each season and model.
     """
-    has_model = model_col in pred_df.columns
-    group_cols = [model_col, season_col] if has_model else [season_col]
+    results = []
 
-    records = []
-    for group_keys, group in pred_df.groupby(group_cols):
-        if has_model:
-            model_name, season_val = group_keys
-        else:
-            model_name = "default"
-            season_val = group_keys
+    for model_name, m_group in df.groupby("model"):
+        for season, s_group in m_group.groupby("season"):
+            if k_per_season and season in k_per_season:
+                k = k_per_season[season]
+            else:
+                k = int(s_group["y_true"].sum())
 
-        k = int(group[y_true_col].sum())
-        if k == 0:
-            topk_acc = np.nan
-            hits = 0
-        else:
-            # Sort players descending by predicted probability
-            sorted_group = group.sort_values(by=y_proba_col, ascending=False)
-            top_k_selected = sorted_group.head(k)
-            hits = int(top_k_selected[y_true_col].sum())
-            topk_acc = float(hits / k)
+            if k <= 0:
+                continue
 
-        records.append(
-            {
+            sorted_group = s_group.sort_values(by="y_proba", ascending=False)
+            top_k = sorted_group.iloc[:k]
+            hits = int(top_k["y_true"].sum())
+            acc = float(hits / k)
+
+            results.append({
                 "model": model_name,
-                "season": season_val,
+                "season": int(season),
                 "k": k,
                 "hits": hits,
-                "topk_accuracy": topk_acc,
-            }
-        )
+                "topk_accuracy": acc,
+            })
 
-    results_df = pd.DataFrame(records)
-    if not has_model:
-        results_df = results_df.drop(columns=["model"])
-
-    return results_df.sort_values(by=[c for c in ["model", "season"] if c in results_df.columns]).reset_index(drop=True)
+    return pd.DataFrame(results)
 
 
 def get_error_cases(
-    pred_df: pd.DataFrame,
-    threshold: float = 0.5,
-    y_true_col: str = "y_true",
-    y_proba_col: str = "y_proba"
+    df: pd.DataFrame,
+    model_name: str,
+    split: str = "val",
+    threshold: float = 0.5
 ) -> Dict[str, pd.DataFrame]:
     """
-    Identify prediction error cases based on decision threshold:
-    - False Positives (FP): High predicted probability (>= threshold) but not actually an All-Star (y_true == 0).
-    - False Negatives (FN): Low predicted probability (< threshold) but was actually an All-Star (y_true == 1).
-
-    Parameters
-    ----------
-    pred_df : pd.DataFrame
-        Predictions dataframe containing player, season, model, y_true, y_proba.
-    threshold : float, default=0.5
-        Classification threshold.
-    y_true_col : str, default='y_true'
-        Ground truth label column.
-    y_proba_col : str, default='y_proba'
-        Predicted probability column.
-
-    Returns
-    -------
-    Dict[str, pd.DataFrame]
-        Dictionary with keys:
-        - 'false_positives': pd.DataFrame of FP cases sorted by y_proba descending.
-        - 'false_negatives': pd.DataFrame of FN cases sorted by y_proba ascending.
+    Extract False Positives (FP) and False Negatives (FN).
     """
-    df = pred_df.copy()
-    y_pred = df[y_proba_col] >= threshold
+    sub = df[(df["model"] == model_name) & (df["split"] == split)].copy()
+    if sub.empty:
+        return {"false_positives": pd.DataFrame(), "false_negatives": pd.DataFrame()}
 
-    fp_mask = (y_pred == True) & (df[y_true_col] == 0)
-    fn_mask = (y_pred == False) & (df[y_true_col] == 1)
+    sub["y_pred"] = (sub["y_proba"] >= threshold).astype(int)
 
-    fp_df = df[fp_mask].sort_values(by=y_proba_col, ascending=False).reset_index(drop=True)
-    fn_df = df[fn_mask].sort_values(by=y_proba_col, ascending=True).reset_index(drop=True)
+    fp = sub[(sub["y_true"] == 0) & (sub["y_pred"] == 1)].sort_values(
+        by="y_proba", ascending=False
+    )
+    fn = sub[(sub["y_true"] == 1) & (sub["y_pred"] == 0)].sort_values(
+        by="y_proba", ascending=True
+    )
 
-    return {
-        "false_positives": fp_df,
-        "false_negatives": fn_df,
-    }
+    return {"false_positives": fp, "false_negatives": fn}
 
 
 def evaluate_all_models(
-    pred_df: pd.DataFrame,
+    df: pd.DataFrame,
     threshold: float = 0.5,
-    split: Optional[str] = None
+    split: Optional[str] = "val"
 ) -> pd.DataFrame:
     """
-    Produce a consolidated benchmark leaderboard across all models present in predictions dataframe.
-    Computes standard classification metrics and mean Top-K accuracy across seasons.
-
-    Parameters
-    ----------
-    pred_df : pd.DataFrame
-        Predictions dataframe.
-    threshold : float, default=0.5
-        Probability cutoff for threshold-based metrics.
-    split : str, optional
-        Filter by specific split ('val', 'test', etc.).
-
-    Returns
-    -------
-    pd.DataFrame
-        Summary table ranking models with columns:
-        ['model', 'precision', 'recall', 'f1', 'pr_auc', 'roc_auc', 'mean_topk_acc']
+    Produce a summary benchmark table for all models in a specific split.
     """
-    df = pred_df if split is None else pred_df[pred_df["split"] == split]
-    models = df["model"].unique() if "model" in df.columns else ["default"]
+    if split:
+        target_df = df[df["split"] == split]
+    else:
+        target_df = df
 
-    rows = []
-    topk_df = compute_topk_accuracy_per_season(df)
+    records = []
+    topk_df = compute_topk_accuracy_per_season(target_df)
 
-    for m in models:
-        m_df = df[df["model"] == m] if "model" in df.columns else df
-        metrics = compute_classification_metrics(m_df["y_true"], m_df["y_proba"], threshold=threshold)
+    for model_name, m_group in target_df.groupby("model"):
+        y_true = m_group["y_true"].values
+        y_proba = m_group["y_proba"].values
 
-        if "model" in topk_df.columns:
-            m_topk = topk_df[topk_df["model"] == m]["topk_accuracy"].mean()
-        else:
-            m_topk = topk_df["topk_accuracy"].mean()
+        metrics = compute_classification_metrics(y_true, y_proba, threshold=threshold)
 
-        row = {
-            "model": m,
+        m_topk = topk_df[topk_df["model"] == model_name]
+        mean_topk = float(m_topk["topk_accuracy"].mean()) if not m_topk.empty else 0.0
+
+        records.append({
+            "model": model_name,
             "precision": metrics["precision"],
             "recall": metrics["recall"],
             "f1": metrics["f1"],
             "pr_auc": metrics["pr_auc"],
             "roc_auc": metrics["roc_auc"],
-            "mean_topk_acc": float(m_topk) if not np.isnan(m_topk) else np.nan,
-        }
-        rows.append(row)
+            "mean_topk_acc": mean_topk,
+        })
 
-    summary_df = pd.DataFrame(rows)
-    return summary_df.sort_values(by="mean_topk_acc", ascending=False).reset_index(drop=True)
+    summary_df = pd.DataFrame(records)
+    return summary_df.sort_values(by="f1", ascending=False).reset_index(drop=True)
+
+
+def plot_rf_confusion_matrix(
+    pred_df: pd.DataFrame,
+    split: str = "val",
+    threshold: float = 0.5,
+    output_path: Optional[Union[str, Path]] = None
+) -> None:
+    """
+    Plot and save the standalone Confusion Matrix for Random Forest.
+    Default split is 'val' for Chapter 3.
+    """
+    import matplotlib.pyplot as plt
+    from sklearn.metrics import confusion_matrix
+
+    df_rf = pred_df[(pred_df["model"] == "RandomForest") & (pred_df["split"] == split)]
+    if df_rf.empty:
+        print(f"No predictions found for RandomForest in split '{split}'.")
+        return
+
+    y_true = df_rf["y_true"].values
+    y_pred = (df_rf["y_proba"].values >= threshold).astype(int)
+    cm = confusion_matrix(y_true, y_pred)
+
+    total_neg = cm[0].sum()
+    total_pos = cm[1].sum()
+
+    labels = [
+        [f"TN = {cm[0,0]:,}\n({cm[0,0]/total_neg:.2%})", f"FP = {cm[0,1]:,}\n({cm[0,1]/total_neg:.2%})"],
+        [f"FN = {cm[1,0]:,}\n({cm[1,0]/total_pos:.2%})", f"TP = {cm[1,1]:,}\n({cm[1,1]/total_pos:.2%})"]
+    ]
+
+    split_title = "VALIDATION (2017 - 2019)" if split == "val" else "TEST (2020 - 2026)"
+    vmax_val = 1400 if split == "val" else 2800
+
+    fig, ax = plt.subplots(figsize=(7, 5.8), dpi=300)
+    im = ax.imshow(cm, cmap=plt.cm.Blues, aspect="auto", vmin=0, vmax=vmax_val)
+    ax.set_xticks([0, 1])
+    ax.set_yticks([0, 1])
+    ax.set_xticklabels(["Dự đoán 0\n(Non-All-Star)", "Dự đoán 1\n(All-Star)"], fontsize=11, fontweight="bold")
+    ax.set_yticklabels(["Thực tế 0\n(Non-All-Star)", "Thực tế 1\n(All-Star)"], fontsize=11, fontweight="bold")
+    ax.set_xlabel("Nhãn dự đoán (Predicted)", fontsize=12, fontweight="bold", labelpad=10)
+    ax.set_ylabel("Nhãn thực tế (True Ground)", fontsize=12, fontweight="bold", labelpad=10)
+    ax.set_title(
+        f"Ma trận nhầm lẫn: Mô hình Rừng ngẫu nhiên (Random Forest)\nTập {split_title} ({len(y_true):,} mẫu, tau = {threshold})",
+        fontsize=12, fontweight="bold", color="#003366", pad=12
+    )
+
+    threshold_color = vmax_val / 2
+    for r in range(2):
+        for c in range(2):
+            val = cm[r, c]
+            txt_color = "white" if val > threshold_color else "black"
+            ax.text(c, r, labels[r][c], ha="center", va="center", fontsize=13.5, fontweight="bold", color=txt_color)
+
+    ax.set_xticks(np.arange(-0.5, 2, 1), minor=True)
+    ax.set_yticks(np.arange(-0.5, 2, 1), minor=True)
+    ax.grid(which="minor", color="white", linestyle="-", linewidth=3)
+    ax.tick_params(which="minor", bottom=False, left=False)
+
+    plt.tight_layout()
+    if output_path:
+        out_p = Path(output_path)
+        out_p.parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(out_p, dpi=300, bbox_inches="tight")
+        print(f"Đã lưu biểu đồ ma trận nhầm lẫn Random Forest ({split}): {out_p}")
+    plt.close()
+
+
+def plot_confusion_matrices_comparison(
+    pred_df: pd.DataFrame,
+    split: str = "test",
+    threshold: float = 0.5,
+    output_path: Optional[Union[str, Path]] = None
+) -> None:
+    """
+    Plot and save side-by-side Confusion Matrix comparison for Logistic Regression and Random Forest.
+    Used in Chapter 4 on the Test set.
+    """
+    import matplotlib.pyplot as plt
+    from sklearn.metrics import confusion_matrix
+
+    df_log = pred_df[(pred_df["model"] == "LogisticRegression") & (pred_df["split"] == split)]
+    df_rf = pred_df[(pred_df["model"] == "RandomForest") & (pred_df["split"] == split)]
+
+    if df_log.empty or df_rf.empty:
+        print("Missing predictions for LogisticRegression or RandomForest.")
+        return
+
+    cm_log = confusion_matrix(df_log["y_true"], (df_log["y_proba"] >= threshold).astype(int))
+    cm_rf = confusion_matrix(df_rf["y_true"], (df_rf["y_proba"] >= threshold).astype(int))
+
+    labels_log = [
+        [f"TN = {cm_log[0,0]:,}\n({cm_log[0,0]/cm_log[0].sum():.2%})", f"FP = {cm_log[0,1]:,}\n({cm_log[0,1]/cm_log[0].sum():.2%})"],
+        [f"FN = {cm_log[1,0]:,}\n({cm_log[1,0]/cm_log[1].sum():.2%})", f"TP = {cm_log[1,1]:,}\n({cm_log[1,1]/cm_log[1].sum():.2%})"]
+    ]
+
+    labels_rf = [
+        [f"TN = {cm_rf[0,0]:,}\n({cm_rf[0,0]/cm_rf[0].sum():.2%})", f"FP = {cm_rf[0,1]:,}\n({cm_rf[0,1]/cm_rf[0].sum():.2%})"],
+        [f"FN = {cm_rf[1,0]:,}\n({cm_rf[1,0]/cm_rf[1].sum():.2%})", f"TP = {cm_rf[1,1]:,}\n({cm_rf[1,1]/cm_rf[1].sum():.2%})"]
+    ]
+
+    fig, axes = plt.subplots(1, 2, figsize=(13.5, 6), dpi=300)
+
+    configs = [
+        (axes[0], cm_log, labels_log, f"Mô hình 1: Hồi quy Logistic (Logistic Regression)\nNgưỡng tau = {threshold} | Tập {split.upper()} (2020 - 2026)"),
+        (axes[1], cm_rf, labels_rf, f"Mô hình 2: Rừng ngẫu nhiên (Random Forest)\nNgưỡng tau = {threshold} | Tập {split.upper()} (2020 - 2026)")
+    ]
+
+    for ax, cm, labels, title in configs:
+        im = ax.imshow(cm, cmap=plt.cm.Blues, aspect="auto", vmin=0, vmax=2800)
+        ax.set_xticks([0, 1])
+        ax.set_yticks([0, 1])
+        ax.set_xticklabels(["Dự đoán 0\n(Non-All-Star)", "Dự đoán 1\n(All-Star)"], fontsize=11, fontweight="bold")
+        ax.set_yticklabels(["Thực tế 0\n(Non-All-Star)", "Thực tế 1\n(All-Star)"], fontsize=11, fontweight="bold")
+        ax.set_xlabel("Nhãn dự đoán (Predicted)", fontsize=12, fontweight="bold", labelpad=10)
+        ax.set_ylabel("Nhãn thực tế (True Ground)", fontsize=12, fontweight="bold", labelpad=10)
+        ax.set_title(title, fontsize=12.5, fontweight="bold", color="#003366", pad=12)
+
+        for r in range(2):
+            for c in range(2):
+                val = cm[r, c]
+                txt_color = "white" if val > 1200 else "black"
+                ax.text(c, r, labels[r][c], ha="center", va="center", fontsize=13, fontweight="bold", color=txt_color)
+
+        ax.set_xticks(np.arange(-0.5, 2, 1), minor=True)
+        ax.set_yticks(np.arange(-0.5, 2, 1), minor=True)
+        ax.grid(which="minor", color="white", linestyle="-", linewidth=3)
+        ax.tick_params(which="minor", bottom=False, left=False)
+
+    plt.tight_layout()
+    if output_path:
+        out_p = Path(output_path)
+        out_p.parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(out_p, dpi=300, bbox_inches="tight")
+        print(f"Đã lưu biểu đồ so sánh ma trận nhầm lẫn: {out_p}")
+    plt.close()
 
 
 if __name__ == "__main__":
@@ -312,3 +328,11 @@ if __name__ == "__main__":
     print("=" * 50)
     topk_val = compute_topk_accuracy_per_season(df_preds[df_preds["split"] == "val"])
     print(topk_val.to_string(index=False))
+
+    print("\n" + "=" * 50)
+    print("XUẤT BIỂU ĐỒ MA TRẬN NHẦM LẪN VÀO figures/evaluation/")
+    print("=" * 50)
+    fig_eval_dir = base_dir / "figures" / "evaluation"
+    plot_rf_confusion_matrix(df_preds, split="val", threshold=0.5, output_path=fig_eval_dir / "rf_confusion_matrix_val.png")
+    plot_rf_confusion_matrix(df_preds, split="test", threshold=0.5, output_path=fig_eval_dir / "rf_confusion_matrix.png")
+    plot_confusion_matrices_comparison(df_preds, split="test", threshold=0.5, output_path=fig_eval_dir / "confusion_matrices_comparison.png")

@@ -42,6 +42,7 @@ def get_default_models(random_state: int = 42) -> Dict[str, Any]:
         "RandomForest": RandomForestClassifier(
             class_weight="balanced",
             random_state=random_state,
+            n_jobs=-1,
         ),
     }
     return models

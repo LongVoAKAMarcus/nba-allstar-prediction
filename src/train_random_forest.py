@@ -1,6 +1,6 @@
 """
 Mô hình 2: Rừng Ngẫu Nhiên (Random Forest Classifier) - NBA All-Star Prediction.
-Thành viên phụ trách: Người 3 (Non-linear Tree Ensemble & Evaluation).
+Người thực hiện: Võ Thái Bảo Long (Non-linear Tree Ensemble & Evaluation).
 
 Chức năng:
 1. Nạp dữ liệu huấn luyện (train.csv), kiểm định (val.csv), và kiểm thử (test.csv).
@@ -87,7 +87,7 @@ def train_random_forest_pipeline(
     pred_p = Path(predictions_path or BASE_DIR / "reports" / "predictions.csv")
 
     print("=" * 75)
-    print("NGƯỜI 3: HUẤN LUYỆN MÔ HÌNH 2 - RỪNG NGẪU NHIÊN (RANDOM FOREST CLASSIFIER)")
+    print("HUẤN LUYỆN MÔ HÌNH 2 - RỪNG NGẪU NHIÊN (RANDOM FOREST CLASSIFIER) - VÕ THÁI BẢO LONG")
     print("=" * 75)
 
     train_df = pd.read_csv(train_p)
@@ -142,11 +142,30 @@ def train_random_forest_pipeline(
     pr_auc = average_precision_score(y_val, y_val_proba)
     roc_auc = roc_auc_score(y_val, y_val_proba)
 
+    print(f"  [Ngưỡng mặc định 0.50]")
     print(f"  + Precision: {prec:.4f}  (Độ chính xác rất cao, ít cảnh báo giả)")
     print(f"  + Recall:    {rec:.4f}  (Bắt trúng {int(rec*y_val.sum())}/{y_val.sum()} All-Stars)")
     print(f"  + F1-Score:  {f1:.4f}")
     print(f"  + PR-AUC:    {pr_auc:.4f}")
     print(f"  + ROC-AUC:   {roc_auc:.4f}")
+
+    # Tối ưu hóa ngưỡng quyết định (Threshold Tuning) trên Validation
+    best_thresh, best_f1 = 0.50, f1
+    for th in np.arange(0.20, 0.75, 0.05):
+        th_pred = (y_val_proba >= th).astype(int)
+        th_f1 = f1_score(y_val, th_pred, zero_division=0)
+        if th_f1 > best_f1:
+            best_f1 = th_f1
+            best_thresh = float(th)
+
+    opt_val_pred = (y_val_proba >= best_thresh).astype(int)
+    opt_prec = precision_score(y_val, opt_val_pred, zero_division=0)
+    opt_rec = recall_score(y_val, opt_val_pred, zero_division=0)
+
+    print(f"\n  [Tối ưu hóa ngưỡng: tau* = {best_thresh:.2f}]")
+    print(f"  + Precision: {opt_prec:.4f}")
+    print(f"  + Recall:    {opt_rec:.4f}  (Bắt trúng {int(opt_rec*y_val.sum())}/{y_val.sum()} All-Stars, +{int(opt_rec*y_val.sum()) - int(rec*y_val.sum())} cầu thủ)")
+    print(f"  + F1-Score:  {best_f1:.4f}  (Cải thiện +{best_f1 - f1:.4f} so với ngưỡng 0.50)")
 
     # 5. Lưu mô hình ra đĩa
     m_dir.mkdir(parents=True, exist_ok=True)
@@ -183,7 +202,9 @@ def train_random_forest_pipeline(
         "model": rf,
         "dummy": dummy,
         "feature_importances": feat_df,
-        "metrics_val": {"precision": prec, "recall": rec, "f1": f1, "pr_auc": pr_auc, "roc_auc": roc_auc}
+        "optimal_threshold": best_thresh,
+        "metrics_val": {"precision": prec, "recall": rec, "f1": f1, "pr_auc": pr_auc, "roc_auc": roc_auc},
+        "metrics_val_optimal": {"precision": opt_prec, "recall": opt_rec, "f1": best_f1, "threshold": best_thresh}
     }
 
 
