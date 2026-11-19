@@ -207,7 +207,7 @@ def plot_rf_confusion_matrix(
     ax.set_xticklabels(["Dự đoán 0\n(Non-All-Star)", "Dự đoán 1\n(All-Star)"], fontsize=11, fontweight="bold")
     ax.set_yticklabels(["Thực tế 0\n(Non-All-Star)", "Thực tế 1\n(All-Star)"], fontsize=11, fontweight="bold")
     ax.set_xlabel("Nhãn dự đoán (Predicted)", fontsize=12, fontweight="bold", labelpad=10)
-    ax.set_ylabel("Nhãn thực tế (True Ground)", fontsize=12, fontweight="bold", labelpad=10)
+    ax.set_ylabel("Nhãn thực tế (Ground Truth)", fontsize=12, fontweight="bold", labelpad=10)
     ax.set_title(
         f"Ma trận nhầm lẫn: Mô hình Rừng ngẫu nhiên (Random Forest)\nTập {split_title} ({len(y_true):,} mẫu, tau = {threshold})",
         fontsize=12, fontweight="bold", color="#003366", pad=12
@@ -281,7 +281,7 @@ def plot_confusion_matrices_comparison(
         ax.set_xticklabels(["Dự đoán 0\n(Non-All-Star)", "Dự đoán 1\n(All-Star)"], fontsize=11, fontweight="bold")
         ax.set_yticklabels(["Thực tế 0\n(Non-All-Star)", "Thực tế 1\n(All-Star)"], fontsize=11, fontweight="bold")
         ax.set_xlabel("Nhãn dự đoán (Predicted)", fontsize=12, fontweight="bold", labelpad=10)
-        ax.set_ylabel("Nhãn thực tế (True Ground)", fontsize=12, fontweight="bold", labelpad=10)
+        ax.set_ylabel("Nhãn thực tế (Ground Truth)", fontsize=12, fontweight="bold", labelpad=10)
         ax.set_title(title, fontsize=12.5, fontweight="bold", color="#003366", pad=12)
 
         ax.set_xticks(np.arange(-0.5, 2, 1), minor=True)
