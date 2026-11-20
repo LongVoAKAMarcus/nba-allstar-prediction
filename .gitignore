@@ -63,6 +63,7 @@ data/raw/*.csv
 !reports/predictions.csv
 !sample_data/*.csv
 reports/*.pdf
+!reports/NHÓM_11_HK261.pdf
 reports/*.html
 reports/*.docx
 *.docx
